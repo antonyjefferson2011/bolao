@@ -4,431 +4,171 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bolão da Ennes ⚽</title>
+    <link rel="stylesheet" href="style.css">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- Mercado Pago SDK -->
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
-        body { background: #0b1a2e; color: #f0f4fa; padding: 20px; min-height: 100vh; display: flex; justify-content: center; }
-        .app { max-width: 1100px; width: 100%; }
-        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 28px; border-bottom: 2px solid #2a4058; padding-bottom: 16px; }
-        .logo { display: flex; align-items: center; gap: 10px; }
-        .logo i { font-size: 2.2rem; color: #f5c842; }
-        .logo h1 { font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg, #f5c842, #f5a623); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .user-area { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .user-area span { background: #1f3349; padding: 8px 18px; border-radius: 40px; font-size: 0.9rem; }
-        .btn { background: #2a4058; border: none; color: white; padding: 8px 22px; border-radius: 40px; cursor: pointer; transition: 0.2s; font-weight: 600; }
-        .btn:hover { background: #3a5a7a; transform: scale(0.97); }
-        .btn-admin { background: #c44536; }
-        .btn-admin:hover { background: #a83222; }
-        .btn-outline { background: transparent; border: 1px solid #4a6a8a; }
-        .btn-success { background: #2d7a3a; }
-        .btn-success:hover { background: #1f5f2a; }
-        .card { background: #132433; border-radius: 24px; padding: 20px 24px; margin-bottom: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); border: 1px solid #1f3750; }
-        .card h2 { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 1.5rem; margin-bottom: 18px; }
-        .card h2 i { color: #f5c842; }
-        .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .game-item { background: #0d1b2b; border-radius: 20px; padding: 16px; border-left: 6px solid #f5c842; transition: 0.2s; }
-        .game-item:hover { background: #162f44; }
-        .teams { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1.2rem; gap: 8px; }
-        .flag { font-size: 1.6rem; margin-right: 4px; }
-        .score { display: flex; align-items: center; gap: 14px; background: #1a2e42; padding: 6px 14px; border-radius: 40px; }
-        .score input { width: 50px; background: #0b1a2e; border: 1px solid #2f4a66; border-radius: 30px; padding: 6px; text-align: center; color: white; font-weight: 600; }
-        .score input:focus { outline: 2px solid #f5c842; }
-        .status { font-size: 0.8rem; padding: 4px 12px; border-radius: 30px; background: #1f3b4f; display: inline-block; margin-top: 10px; }
-        .status.finished { background: #2d5a3a; }
-        .status.future { background: #3a4a6a; }
-        .admin-panel { background: #0f1f31; border-radius: 20px; padding: 18px; margin-top: 12px; border: 1px dashed #3a5a7a; }
-        .admin-panel input, .admin-panel select { background: #1a2e42; border: 1px solid #2f4a66; padding: 10px 14px; border-radius: 40px; color: white; width: 100%; margin: 6px 0; }
-        .admin-panel .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-        .admin-panel button { background: #f5c842; color: #0b1a2e; font-weight: 700; border: none; padding: 10px 24px; border-radius: 40px; cursor: pointer; }
-        .admin-panel button:hover { background: #e0b032; }
-        .hide { display: none; }
-        .footer { text-align: center; opacity: 0.6; margin-top: 30px; font-size: 0.85rem; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; }
-        .modal-content { background: #132433; padding: 30px; border-radius: 30px; max-width: 400px; width: 90%; border: 1px solid #2a4058; }
-        .modal-content h2 { margin-bottom: 20px; }
-        .modal-content input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 40px; border: 1px solid #2f4a66; background: #0b1a2e; color: white; }
-        .modal-content .btn { width: 100%; margin-top: 10px; }
-        .modal-content .toggle-link { color: #f5c842; cursor: pointer; text-align: center; display: block; margin-top: 12px; }
-        .toast { background: #1f3349; padding: 12px 24px; border-radius: 60px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); border: 1px solid #f5c842; z-index: 1000; }
-    </style>
 </head>
 <body>
-<div class="app" id="app">
-    <!-- Header -->
-    <header class="header">
-        <div class="logo">
-            <i class="fas fa-futbol"></i>
-            <h1>Bolão da Ennes</h1>
-        </div>
-        <div class="user-area">
-            <span id="userDisplay"><i class="fas fa-user-circle"></i> Convidado</span>
-            <button id="authBtn" class="btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
-            <button id="adminToggleBtn" class="btn btn-admin hide"><i class="fas fa-user-cog"></i> ADM</button>
-        </div>
-    </header>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-futbol"></i>
+                <h1>Bolão da Ennes</h1>
+            </div>
+            <div class="user-area">
+                <span id="userDisplay"><i class="fas fa-user-circle"></i> Convidado</span>
+                <button id="authBtn" class="btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+                <button id="adminToggleBtn" class="btn btn-admin hide"><i class="fas fa-user-cog"></i> ADM</button>
+            </div>
+        </header>
 
-    <!-- Próximos jogos -->
-    <section class="card">
-        <h2><i class="fas fa-calendar-alt"></i> Jogos Futuros</h2>
-        <div id="futureGames" class="games-grid"></div>
-    </section>
+        <!-- Dashboard Stats -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-trophy"></i>
+                <div>
+                    <h3 id="totalGames">0</h3>
+                    <span>Total de Jogos</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-calendar-check"></i>
+                <div>
+                    <h3 id="finishedGames">0</h3>
+                    <span>Jogos Finalizados</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <div>
+                    <h3 id="totalUsers">0</h3>
+                    <span>Participantes</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-coins"></i>
+                <div>
+                    <h3 id="totalPrize">R$ 0,00</h3>
+                    <span>Prêmio Total</span>
+                </div>
+            </div>
+        </section>
 
-    <!-- Todos os jogos -->
-    <section class="card">
-        <h2><i class="fas fa-trophy"></i> Resultados & Jogos</h2>
-        <div id="allGames" class="games-grid"></div>
-    </section>
+        <!-- Próximos jogos -->
+        <section class="card">
+            <h2><i class="fas fa-calendar-alt"></i> Jogos Futuros</h2>
+            <div id="futureGames" class="games-grid"></div>
+        </section>
 
-    <!-- Painel Admin -->
-    <section id="adminPanel" class="card admin-panel hide">
-        <h2><i class="fas fa-shield-alt"></i> Painel Administrativo</h2>
-        <div class="row">
-            <input type="text" id="team1Input" placeholder="Time 1 (ex: Brasil)">
-            <input type="text" id="team2Input" placeholder="Time 2 (ex: Argentina)">
-            <input type="text" id="flag1Input" placeholder="🇧🇷 emoji bandeira">
-            <input type="text" id="flag2Input" placeholder="🇦🇷 emoji bandeira">
-            <input type="date" id="gameDateInput">
-            <button id="addGameBtn"><i class="fas fa-plus-circle"></i> Adicionar Jogo</button>
-        </div>
-        <div style="margin-top: 18px; display: flex; flex-wrap: wrap; gap: 12px;">
-            <select id="gameSelector" style="flex:2; min-width:160px;"><option value="">Selecione jogo</option></select>
-            <input type="number" id="score1Update" placeholder="Gols time 1" style="flex:1; min-width:70px;">
-            <input type="number" id="score2Update" placeholder="Gols time 2" style="flex:1; min-width:70px;">
-            <button id="updateScoreBtn"><i class="fas fa-check"></i> Atualizar Placar</button>
-            <button id="deleteGameBtn" style="background:#b33;"><i class="fas fa-trash"></i> Remover</button>
-        </div>
-        <div style="margin-top:12px;">
-            <button id="toggleAdminMode" class="btn btn-outline"><i class="fas fa-eye-slash"></i> Esconder ADM</button>
-        </div>
-    </section>
-    <div class="footer">⚡ Bolão da Ennes • Resultados automáticos com Firebase</div>
-</div>
+        <!-- Todos os jogos -->
+        <section class="card">
+            <h2><i class="fas fa-trophy"></i> Resultados & Jogos</h2>
+            <div id="allGames" class="games-grid"></div>
+        </section>
 
-<!-- Modal de Login/Cadastro -->
-<div id="authModal" class="modal hide">
-    <div class="modal-content">
-        <h2 id="modalTitle">Entrar</h2>
-        <input type="email" id="emailInput" placeholder="Email" autocomplete="email">
-        <input type="password" id="passwordInput" placeholder="Senha" autocomplete="current-password">
-        <div id="authError" style="color:#e74c3c; font-size:0.9rem; margin:8px 0;"></div>
-        <button id="submitAuthBtn" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> Entrar</button>
-        <span class="toggle-link" id="toggleAuthMode">Criar conta</span>
-        <button id="closeModalBtn" class="btn btn-outline" style="margin-top:8px;">Fechar</button>
+        <!-- Painel Admin -->
+        <section id="adminPanel" class="card admin-panel hide">
+            <h2><i class="fas fa-shield-alt"></i> Painel Administrativo</h2>
+            
+            <div class="admin-section">
+                <h3><i class="fas fa-plus-circle"></i> Adicionar Jogo</h3>
+                <div class="row">
+                    <input type="text" id="team1Input" placeholder="Time 1 (ex: Brasil)">
+                    <input type="text" id="team2Input" placeholder="Time 2 (ex: Argentina)">
+                    <input type="text" id="flag1Input" placeholder="🇧🇷 emoji bandeira">
+                    <input type="text" id="flag2Input" placeholder="🇦🇷 emoji bandeira">
+                    <input type="date" id="gameDateInput">
+                    <button id="addGameBtn" class="btn-success"><i class="fas fa-plus-circle"></i> Adicionar</button>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3><i class="fas fa-edit"></i> Atualizar Placar</h3>
+                <div class="row">
+                    <select id="gameSelector"><option value="">Selecione jogo</option></select>
+                    <input type="number" id="score1Update" placeholder="Gols time 1">
+                    <input type="number" id="score2Update" placeholder="Gols time 2">
+                    <button id="updateScoreBtn" class="btn-warning"><i class="fas fa-check"></i> Atualizar</button>
+                    <button id="deleteGameBtn" class="btn-danger"><i class="fas fa-trash"></i> Remover</button>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3><i class="fas fa-crown"></i> Gerenciar Admin</h3>
+                <div class="row">
+                    <input type="email" id="adminEmailInput" placeholder="Email do usuário">
+                    <button id="makeAdminBtn" class="btn-admin"><i class="fas fa-user-shield"></i> Tornar Admin</button>
+                </div>
+            </div>
+
+            <button id="toggleAdminMode" class="btn btn-outline"><i class="fas fa-eye-slash"></i> Fechar Painel</button>
+        </section>
+
+        <!-- Pagamento -->
+        <section class="card payment-section">
+            <h2><i class="fas fa-hand-holding-usd"></i> Contribua com o Bolão</h2>
+            <p style="opacity:0.8; margin-bottom:15px;">Ajude a manter o bolão! Sua contribuição aumenta o prêmio final.</p>
+            <div class="payment-options">
+                <div class="payment-card">
+                    <i class="fas fa-bolt"></i>
+                    <h3>Pix R$ 10</h3>
+                    <button id="pix10Btn" class="btn-payment"><i class="fas fa-qrcode"></i> Pagar com Pix</button>
+                </div>
+                <div class="payment-card">
+                    <i class="fas fa-star"></i>
+                    <h3>Pix R$ 20</h3>
+                    <button id="pix20Btn" class="btn-payment"><i class="fas fa-qrcode"></i> Pagar com Pix</button>
+                </div>
+                <div class="payment-card">
+                    <i class="fas fa-gem"></i>
+                    <h3>Pix R$ 50</h3>
+                    <button id="pix50Btn" class="btn-payment"><i class="fas fa-qrcode"></i> Pagar com Pix</button>
+                </div>
+            </div>
+            <div id="paymentStatus" style="margin-top:15px;"></div>
+        </section>
+
+        <div class="footer">⚡ Bolão da Ennes • Resultados automáticos com Firebase</div>
     </div>
-</div>
 
-<script>
-    // ========== FIREBASE ==========
-    const firebaseConfig = {
-        apiKey: "AIzaSyAnpqLos4gtwIF6fgbh9Y9RIEZScrX33u0",
-        authDomain: "bizflow-oficial.firebaseapp.com",
-        databaseURL: "https://bizflow-oficial-default-rtdb.firebaseio.com",
-        projectId: "bizflow-oficial",
-        storageBucket: "bizflow-oficial.firebasestorage.app",
-        messagingSenderId: "767888965470",
-        appId: "1:767888965470:web:ba38371163e030adfad9cf",
-        measurementId: "G-G4702KC57C"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
+    <!-- Modal de Login/Cadastro -->
+    <div id="authModal" class="modal hide">
+        <div class="modal-content">
+            <h2 id="modalTitle">Entrar</h2>
+            <input type="email" id="emailInput" placeholder="Email">
+            <input type="password" id="passwordInput" placeholder="Senha">
+            <div id="authError" style="color:#e74c3c; font-size:0.9rem; margin:8px 0;"></div>
+            <button id="submitAuthBtn" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            <span class="toggle-link" id="toggleAuthMode">Criar conta</span>
+            <button id="closeModalBtn" class="btn btn-outline" style="margin-top:8px;">Fechar</button>
+        </div>
+    </div>
 
-    // ========== DOM ==========
-    const userDisplay = document.getElementById('userDisplay');
-    const authBtn = document.getElementById('authBtn');
-    const adminToggleBtn = document.getElementById('adminToggleBtn');
-    const adminPanel = document.getElementById('adminPanel');
-    const futureGamesDiv = document.getElementById('futureGames');
-    const allGamesDiv = document.getElementById('allGames');
-    const gameSelector = document.getElementById('gameSelector');
-    const team1Input = document.getElementById('team1Input');
-    const team2Input = document.getElementById('team2Input');
-    const flag1Input = document.getElementById('flag1Input');
-    const flag2Input = document.getElementById('flag2Input');
-    const gameDateInput = document.getElementById('gameDateInput');
-    const addGameBtn = document.getElementById('addGameBtn');
-    const score1Update = document.getElementById('score1Update');
-    const score2Update = document.getElementById('score2Update');
-    const updateScoreBtn = document.getElementById('updateScoreBtn');
-    const deleteGameBtn = document.getElementById('deleteGameBtn');
-    const toggleAdminMode = document.getElementById('toggleAdminMode');
-    const authModal = document.getElementById('authModal');
-    const emailInput = document.getElementById('emailInput');
-    const passwordInput = document.getElementById('passwordInput');
-    const submitAuthBtn = document.getElementById('submitAuthBtn');
-    const toggleAuthMode = document.getElementById('toggleAuthMode');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    const modalTitle = document.getElementById('modalTitle');
-    const authError = document.getElementById('authError');
-
-    // ========== ESTADO ==========
-    let currentUser = null;
-    let isAdmin = false;
-    let isLoginMode = true;
-    const gamesRef = db.ref('jogos');
-    const usersRef = db.ref('usuarios');
-
-    // ========== AUTENTICAÇÃO ==========
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            currentUser = user;
-            userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${user.displayName || user.email || 'Usuário'}`;
-            authBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
-            // Verifica se é admin no banco
-            usersRef.child(user.uid).once('value').then(snap => {
-                const userData = snap.val();
-                isAdmin = userData?.admin === true;
-                if (isAdmin) {
-                    adminToggleBtn.classList.remove('hide');
-                } else {
-                    adminToggleBtn.classList.add('hide');
-                    adminPanel.classList.add('hide');
-                }
-            }).catch(() => {
-                isAdmin = false;
-                adminToggleBtn.classList.add('hide');
-                adminPanel.classList.add('hide');
-            });
-        } else {
-            currentUser = null;
-            userDisplay.innerHTML = '<i class="fas fa-user-circle"></i> Convidado';
-            authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
-            isAdmin = false;
-            adminToggleBtn.classList.add('hide');
-            adminPanel.classList.add('hide');
-        }
-    });
-
-    // ========== MODAL ==========
-    function openModal() {
-        authModal.classList.remove('hide');
-        authError.textContent = '';
-        emailInput.value = '';
-        passwordInput.value = '';
-        isLoginMode = true;
-        modalTitle.textContent = 'Entrar';
-        submitAuthBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
-        toggleAuthMode.textContent = 'Criar conta';
-    }
-
-    function closeModal() {
-        authModal.classList.add('hide');
-    }
-
-    authBtn.addEventListener('click', () => {
-        if (currentUser) {
-            auth.signOut();
-        } else {
-            openModal();
-        }
-    });
-
-    closeModalBtn.addEventListener('click', closeModal);
-    authModal.addEventListener('click', (e) => {
-        if (e.target === authModal) closeModal();
-    });
-
-    toggleAuthMode.addEventListener('click', () => {
-        isLoginMode = !isLoginMode;
-        if (isLoginMode) {
-            modalTitle.textContent = 'Entrar';
-            submitAuthBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
-            toggleAuthMode.textContent = 'Criar conta';
-        } else {
-            modalTitle.textContent = 'Criar Conta';
-            submitAuthBtn.innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar';
-            toggleAuthMode.textContent = 'Já tenho conta';
-        }
-        authError.textContent = '';
-    });
-
-    submitAuthBtn.addEventListener('click', async () => {
-        const email = emailInput.value.trim();
-        const password = passwordInput.value.trim();
-        if (!email || !password) {
-            authError.textContent = 'Preencha email e senha.';
-            return;
-        }
-        authError.textContent = '';
-        try {
-            if (isLoginMode) {
-                await auth.signInWithEmailAndPassword(email, password);
-                closeModal();
-            } else {
-                const cred = await auth.createUserWithEmailAndPassword(email, password);
-                // Salva usuário no Realtime Database
-                await usersRef.child(cred.user.uid).set({
-                    email: email,
-                    admin: false,  // por padrão não é admin
-                    criadoEm: firebase.database.ServerValue.TIMESTAMP
-                });
-                closeModal();
-                // Mostra toast
-                showToast('Conta criada! Faça login para acessar.');
-            }
-        } catch (error) {
-            authError.textContent = error.message;
-        }
-    });
-
-    // ========== ADMIN TOGGLE ==========
-    adminToggleBtn.addEventListener('click', () => {
-        if (isAdmin) {
-            adminPanel.classList.toggle('hide');
-        } else {
-            alert('Apenas administradores');
-        }
-    });
-    toggleAdminMode.addEventListener('click', () => {
-        adminPanel.classList.add('hide');
-    });
-
-    // ========== RENDER ==========
-    function renderGames(snapshot) {
-        const games = snapshot.val();
-        if (!games) {
-            futureGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo cadastrado.</p>';
-            allGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo disponível.</p>';
-            gameSelector.innerHTML = '<option value="">Selecione jogo</option>';
-            return;
-        }
-        const gameIds = Object.keys(games);
-        const gameList = gameIds.map(id => ({ id, ...games[id] }));
-        gameList.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
-
-        const future = gameList.filter(g => g.placar1 === undefined || g.placar1 === null);
-        const withScore = gameList.filter(g => g.placar1 !== undefined && g.placar1 !== null);
-
-        // Future
-        if (future.length === 0) {
-            futureGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo futuro.</p>';
-        } else {
-            futureGamesDiv.innerHTML = future.map(g => `
-                <div class="game-item">
-                    <div class="teams">
-                        <span><span class="flag">${g.flag1 || '🏳️'}</span> ${g.time1 || 'Time 1'}</span>
-                        <span style="font-size:0.9rem; color:#aac;">vs</span>
-                        <span>${g.time2 || 'Time 2'} <span class="flag">${g.flag2 || '🏳️'}</span></span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; margin-top: 12px;">
-                        <span class="status future"><i class="far fa-clock"></i> ${g.data || 'Data não definida'}</span>
-                        <span><i class="fas fa-hourglass-half"></i> Aguardando</span>
+    <!-- Modal de Pagamento Pix -->
+    <div id="pixModal" class="modal hide">
+        <div class="modal-content payment-modal">
+            <h2><i class="fas fa-qrcode"></i> Pagamento via Pix</h2>
+            <div id="pixQrCode" style="text-align:center; padding:20px;">
+                <div style="background:white; padding:20px; border-radius:16px; display:inline-block;">
+                    <div id="qrCodeContainer" style="width:200px; height:200px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; border-radius:8px;">
+                        <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:#666;"></i>
                     </div>
                 </div>
-            `).join('');
-        }
+                <p style="margin-top:15px; color:#aaa;">Escaneie o QR Code com seu banco</p>
+                <p id="pixCopyCode" style="background:#0b1a2e; padding:10px; border-radius:8px; margin-top:10px; word-break:break-all; font-size:0.8rem; color:#f5c842;"></p>
+                <button id="copyPixBtn" class="btn"><i class="fas fa-copy"></i> Copiar Código</button>
+            </div>
+            <button id="closePixModal" class="btn btn-outline" style="margin-top:15px;">Fechar</button>
+        </div>
+    </div>
 
-        // All games
-        if (gameList.length === 0) {
-            allGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo registrado.</p>';
-        } else {
-            allGamesDiv.innerHTML = gameList.map(g => {
-                const hasScore = (g.placar1 !== undefined && g.placar1 !== null);
-                const statusClass = hasScore ? 'finished' : 'future';
-                const statusText = hasScore ? '✅ Finalizado' : '⏳ Pendente';
-                return `
-                    <div class="game-item" style="border-left-color: ${hasScore ? '#4caf50' : '#f5c842'}">
-                        <div class="teams">
-                            <span><span class="flag">${g.flag1 || '🏳️'}</span> ${g.time1 || 'Time 1'}</span>
-                            <span class="score">
-                                ${hasScore ? `<strong>${g.placar1}</strong> - <strong>${g.placar2}</strong>` : '⚽ vs ⚽'}
-                            </span>
-                            <span>${g.time2 || 'Time 2'} <span class="flag">${g.flag2 || '🏳️'}</span></span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin-top: 12px;">
-                            <span class="status ${statusClass}">${statusText}</span>
-                            <span style="font-size:0.8rem; opacity:0.7;">${g.data || ''}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Populate selector
-        gameSelector.innerHTML = '<option value="">Selecione jogo</option>' + 
-            gameList.map(g => `<option value="${g.id}">${g.time1} vs ${g.time2}</option>`).join('');
-    }
-
-    gamesRef.on('value', snapshot => {
-        renderGames(snapshot);
-    });
-
-    // ========== ADMIN: ADD ==========
-    addGameBtn.addEventListener('click', () => {
-        if (!isAdmin) { alert('Acesso negado'); return; }
-        const time1 = team1Input.value.trim();
-        const time2 = team2Input.value.trim();
-        const flag1 = flag1Input.value.trim() || '🏳️';
-        const flag2 = flag2Input.value.trim() || '🏳️';
-        const data = gameDateInput.value || '2026-06-25';
-        if (!time1 || !time2) {
-            alert('Preencha os nomes dos times.');
-            return;
-        }
-        gamesRef.push({
-            time1, time2, flag1, flag2, data,
-            placar1: null,
-            placar2: null,
-            criadoEm: firebase.database.ServerValue.TIMESTAMP
-        }).then(() => {
-            team1Input.value = ''; team2Input.value = ''; flag1Input.value = ''; flag2Input.value = '';
-            showToast('Jogo adicionado!');
-        }).catch(err => alert('Erro: '+err.message));
-    });
-
-    // ========== ADMIN: UPDATE SCORE ==========
-    updateScoreBtn.addEventListener('click', () => {
-        if (!isAdmin) { alert('Acesso negado'); return; }
-        const gameId = gameSelector.value;
-        if (!gameId) { alert('Selecione um jogo.'); return; }
-        const s1 = parseInt(score1Update.value);
-        const s2 = parseInt(score2Update.value);
-        if (isNaN(s1) || isNaN(s2) || s1 < 0 || s2 < 0) {
-            alert('Insira valores válidos (números >= 0)');
-            return;
-        }
-        gamesRef.child(gameId).update({
-            placar1: s1,
-            placar2: s2
-        }).then(() => {
-            showToast('Placar atualizado!');
-            score1Update.value = ''; score2Update.value = '';
-        }).catch(err => alert('Erro: '+err.message));
-    });
-
-    // ========== ADMIN: DELETE ==========
-    deleteGameBtn.addEventListener('click', () => {
-        if (!isAdmin) { alert('Acesso negado'); return; }
-        const gameId = gameSelector.value;
-        if (!gameId) { alert('Selecione um jogo.'); return; }
-        if (confirm('Remover este jogo permanentemente?')) {
-            gamesRef.child(gameId).remove().then(() => {
-                showToast('Jogo removido.');
-            }).catch(err => alert('Erro: '+err.message));
-        }
-    });
-
-    // ========== TOAST ==========
-    function showToast(msg) {
-        const old = document.querySelector('.toast');
-        if (old) old.remove();
-        const div = document.createElement('div');
-        div.className = 'toast';
-        div.textContent = msg;
-        document.body.appendChild(div);
-        setTimeout(() => div.remove(), 3000);
-    }
-
-    // ========== FUNÇÃO PARA CRIAR ADMIN MANUALMENTE (opcional) ==========
-    // Para tornar um usuário admin, execute no console do navegador:
-    // firebase.database().ref('usuarios/'+uid).update({admin: true})
-    console.log('⚡ Bolão da Ennes carregado!');
-    console.log('Para tornar um usuário admin: db.ref("usuarios/"+uid).update({admin: true})');
-</script>
+    <script src="script.js"></script>
 </body>
 </html>
