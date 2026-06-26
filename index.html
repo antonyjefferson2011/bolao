@@ -9,8 +9,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <!-- Mercado Pago SDK -->
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -108,6 +106,15 @@
                 </div>
             </div>
 
+            <div class="admin-section">
+                <h3><i class="fas fa-check-circle"></i> Confirmar Pagamento</h3>
+                <div class="row">
+                    <select id="paymentSelector"><option value="">Selecione pagamento</option></select>
+                    <button id="confirmPaymentBtn" class="btn-success"><i class="fas fa-check"></i> Confirmar</button>
+                    <button id="rejectPaymentBtn" class="btn-danger"><i class="fas fa-times"></i> Rejeitar</button>
+                </div>
+            </div>
+
             <button id="toggleAdminMode" class="btn btn-outline"><i class="fas fa-eye-slash"></i> Fechar Painel</button>
         </section>
 
@@ -115,27 +122,40 @@
         <section class="card payment-section">
             <h2><i class="fas fa-hand-holding-usd"></i> Contribua com o Bolão</h2>
             <p style="opacity:0.8; margin-bottom:15px;">Ajude a manter o bolão! Sua contribuição aumenta o prêmio final.</p>
-            <div class="payment-options">
-                <div class="payment-card">
-                    <i class="fas fa-bolt"></i>
-                    <h3>Pix R$ 10</h3>
-                    <button id="pix10Btn" class="btn-payment"><i class="fas fa-qrcode"></i> Pagar com Pix</button>
+            
+            <div class="payment-info">
+                <div class="pix-info">
+                    <i class="fas fa-qrcode" style="font-size:2rem; color:#f5c842;"></i>
+                    <div>
+                        <h3>Pague via Pix</h3>
+                        <p style="opacity:0.7; font-size:0.9rem;">Use o código abaixo ou escaneie o QR Code</p>
+                    </div>
                 </div>
-                <div class="payment-card">
-                    <i class="fas fa-star"></i>
-                    <h3>Pix R$ 20</h3>
-                    <button id="pix20Btn" class="btn-payment"><i class="fas fa-qrcode"></i> Pagar com Pix</button>
-                </div>
-                <div class="payment-card">
-                    <i class="fas fa-gem"></i>
-                    <h3>Pix R$ 50</h3>
-                    <button id="pix50Btn" class="btn-payment"><i class="fas fa-qrcode"></i> Pagar com Pix</button>
+                <div class="pix-code-box">
+                    <div class="pix-code-display">
+                        <span id="pixCodeDisplay">00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540BR5913Bolao Ennes6009Sao Paulo62070503***6304E2F3</span>
+                        <button id="copyPixBtn" class="btn"><i class="fas fa-copy"></i> Copiar</button>
+                    </div>
+                    <div class="pix-qr-container">
+                        <img id="pixQrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=00020126360014BR.GOV.BCB.PIX0114%2B5511999999999520400005303986540BR5913Bolao%20Ennes6009Sao%20Paulo62070503***6304E2F3" alt="QR Code Pix" style="width:150px; height:150px;">
+                        <p style="font-size:0.8rem; opacity:0.6; margin-top:8px;">Chave Pix: bolao@ennes.com</p>
+                    </div>
                 </div>
             </div>
-            <div id="paymentStatus" style="margin-top:15px;"></div>
+
+            <div style="margin-top:20px; border-top:1px solid #1f3750; padding-top:20px;">
+                <h3 style="margin-bottom:15px;">Informe seu pagamento</h3>
+                <div class="row">
+                    <input type="text" id="paymentName" placeholder="Seu nome completo" style="flex:2;">
+                    <input type="text" id="paymentValue" placeholder="Valor (ex: 10)" style="flex:1;">
+                    <input type="text" id="paymentKey" placeholder="Chave Pix ou comprovante" style="flex:2;">
+                    <button id="registerPaymentBtn" class="btn-payment"><i class="fas fa-paper-plane"></i> Registrar Pagamento</button>
+                </div>
+                <div id="userPayments" style="margin-top:15px;"></div>
+            </div>
         </section>
 
-        <div class="footer">⚡ Bolão da Ennes • Resultados automáticos com Firebase</div>
+        <div class="footer">⚡ Bolão da Ennes • Pagamento via Pix (sem necessidade de conta em bancos)</div>
     </div>
 
     <!-- Modal de Login/Cadastro -->
@@ -148,24 +168,6 @@
             <button id="submitAuthBtn" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> Entrar</button>
             <span class="toggle-link" id="toggleAuthMode">Criar conta</span>
             <button id="closeModalBtn" class="btn btn-outline" style="margin-top:8px;">Fechar</button>
-        </div>
-    </div>
-
-    <!-- Modal de Pagamento Pix -->
-    <div id="pixModal" class="modal hide">
-        <div class="modal-content payment-modal">
-            <h2><i class="fas fa-qrcode"></i> Pagamento via Pix</h2>
-            <div id="pixQrCode" style="text-align:center; padding:20px;">
-                <div style="background:white; padding:20px; border-radius:16px; display:inline-block;">
-                    <div id="qrCodeContainer" style="width:200px; height:200px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; border-radius:8px;">
-                        <i class="fas fa-spinner fa-spin" style="font-size:2rem; color:#666;"></i>
-                    </div>
-                </div>
-                <p style="margin-top:15px; color:#aaa;">Escaneie o QR Code com seu banco</p>
-                <p id="pixCopyCode" style="background:#0b1a2e; padding:10px; border-radius:8px; margin-top:10px; word-break:break-all; font-size:0.8rem; color:#f5c842;"></p>
-                <button id="copyPixBtn" class="btn"><i class="fas fa-copy"></i> Copiar Código</button>
-            </div>
-            <button id="closePixModal" class="btn btn-outline" style="margin-top:15px;">Fechar</button>
         </div>
     </div>
 
