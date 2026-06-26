@@ -14,11 +14,6 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.database();
 
-// ========== MERCADO PAGO ==========
-const mp = new MercadoPago('APP_USR-7e8b7e2a-6b1f-4c8d-9a2e-3f5c6d8e9f0a', {
-    locale: 'pt-BR'
-});
-
 // ========== DOM REFS ==========
 const userDisplay = document.getElementById('userDisplay');
 const authBtn = document.getElementById('authBtn');
@@ -27,6 +22,7 @@ const adminPanel = document.getElementById('adminPanel');
 const futureGamesDiv = document.getElementById('futureGames');
 const allGamesDiv = document.getElementById('allGames');
 const gameSelector = document.getElementById('gameSelector');
+const paymentSelector = document.getElementById('paymentSelector');
 const team1Input = document.getElementById('team1Input');
 const team2Input = document.getElementById('team2Input');
 const flag1Input = document.getElementById('flag1Input');
@@ -45,6 +41,17 @@ const finishedGamesEl = document.getElementById('finishedGames');
 const totalUsersEl = document.getElementById('totalUsers');
 const totalPrizeEl = document.getElementById('totalPrize');
 
+// Payment elements
+const paymentName = document.getElementById('paymentName');
+const paymentValue = document.getElementById('paymentValue');
+const paymentKey = document.getElementById('paymentKey');
+const registerPaymentBtn = document.getElementById('registerPaymentBtn');
+const userPayments = document.getElementById('userPayments');
+const copyPixBtn = document.getElementById('copyPixBtn');
+const pixCodeDisplay = document.getElementById('pixCodeDisplay');
+const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
+const rejectPaymentBtn = document.getElementById('rejectPaymentBtn');
+
 // Auth Modal
 const authModal = document.getElementById('authModal');
 const emailInput = document.getElementById('emailInput');
@@ -54,14 +61,6 @@ const toggleAuthMode = document.getElementById('toggleAuthMode');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const modalTitle = document.getElementById('modalTitle');
 const authError = document.getElementById('authError');
-
-// Pix Modal
-const pixModal = document.getElementById('pixModal');
-const qrCodeContainer = document.getElementById('qrCodeContainer');
-const pixCopyCode = document.getElementById('pixCopyCode');
-const copyPixBtn = document.getElementById('copyPixBtn');
-const closePixModal = document.getElementById('closePixModal');
-const paymentStatus = document.getElementById('paymentStatus');
 
 // ========== STATE ==========
 let currentUser = null;
@@ -89,6 +88,7 @@ auth.onAuthStateChanged(user => {
                 adminPanel.classList.add('hide');
             }
         });
+        loadUserPayments();
     } else {
         currentUser = null;
         userDisplay.innerHTML = '<i class="fas fa-user-circle"></i> Convidado';
@@ -96,6 +96,7 @@ auth.onAuthStateChanged(user => {
         isAdmin = false;
         adminToggleBtn.classList.add('hide');
         adminPanel.classList.add('hide');
+        userPayments.innerHTML = '<p style="opacity:0.6; text-align:center;">Faça login para ver seus pagamentos</p>';
     }
 });
 
@@ -335,8 +336,144 @@ usersRef.on('value', snapshot => {
     totalUsersEl.textContent = users ? Object.keys(users).length : '0';
 });
 
-// ========== PAYMENTS ==========
-paymentsRef.on('value', snapshot => {
+// ========== PAYMENTS SYSTEM ==========
+// Pix Code (estático)
+const PIX_CODE = '00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540BR5913Bolao Ennes6009Sao Paulo62070503***6304E2F3';
+const PIX_QR_URL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(PIX_CODE)}`;
+
+// Copiar Pix
+copyPixBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(pixCodeDisplay.textContent).then(() => {
+        showToast('Código Pix copiado!');
+    }).catch(() => {
+        showToast('Erro ao copiar');
+    });
+});
+
+// Registrar pagamento
+registerPaymentBtn.addEventListener('click', async () => {
+    if (!currentUser) {
+        showToast('Faça login para registrar um pagamento!');
+        openModal();
+        return;
+    }
+
+    const nome = paymentName.value.trim();
+    const valor = parseFloat(paymentValue.value);
+    const chave = paymentKey.value.trim();
+
+    if (!nome || !valor || !chave) {
+        showToast('Preencha todos os campos');
+        return;
+    }
+
+    if (isNaN(valor) || valor <= 0) {
+        showToast('Insira um valor válido');
+        return;
+    }
+
+    try {
+        await paymentsRef.push({
+            usuario: currentUser.uid,
+            email: currentUser.email,
+            nome: nome,
+            valor: valor,
+            chave: chave,
+            status: 'pendente',
+            data: firebase.database.ServerValue.TIMESTAMP
+        });
+        showToast('Pagamento registrado! Aguardando confirmação.');
+        paymentName.value = '';
+        paymentValue.value = '';
+        paymentKey.value = '';
+    } catch (error) {
+        showToast('Erro: ' + error.message);
+    }
+});
+
+// Carregar pagamentos do usuário
+function loadUserPayments() {
+    if (!currentUser) return;
+    
+    paymentsRef.orderByChild('usuario').equalTo(currentUser.uid).on('value', snapshot => {
+        const payments = snapshot.val();
+        if (!payments) {
+            userPayments.innerHTML = '<p style="opacity:0.6; text-align:center;">Nenhum pagamento registrado</p>';
+            return;
+        }
+
+        const paymentList = Object.entries(payments).map(([id, p]) => ({ id, ...p }));
+        paymentList.sort((a, b) => b.data - a.data);
+
+        userPayments.innerHTML = paymentList.map(p => {
+            const statusClass = p.status || 'pendente';
+            const statusText = {
+                'pendente': '⏳ Pendente',
+                'confirmado': '✅ Confirmado',
+                'rejeitado': '❌ Rejeitado'
+            }[statusClass] || '⏳ Pendente';
+
+            return `
+                <div class="payment-item ${statusClass}">
+                    <div>
+                        <strong>${p.nome || 'Anônimo'}</strong>
+                        <span style="opacity:0.7; font-size:0.85rem;"> - R$ ${p.valor.toFixed(2)}</span>
+                        <div style="font-size:0.75rem; opacity:0.5; margin-top:4px;">
+                            ${p.chave ? 'Chave: ' + p.chave : ''}
+                            ${p.data ? ' • ' + new Date(p.data).toLocaleDateString() : ''}
+                        </div>
+                    </div>
+                    <span class="status-badge ${statusClass}">${statusText}</span>
+                </div>
+            `;
+        }).join('');
+    });
+}
+
+// ========== ADMIN: CONFIRM/REJECT PAYMENTS ==========
+function loadPendingPayments() {
+    if (!isAdmin) return;
+    
+    paymentsRef.orderByChild('status').equalTo('pendente').on('value', snapshot => {
+        const payments = snapshot.val();
+        if (!payments) {
+            paymentSelector.innerHTML = '<option value="">Nenhum pagamento pendente</option>';
+            return;
+        }
+        const paymentList = Object.entries(payments).map(([id, p]) => ({ id, ...p }));
+        paymentSelector.innerHTML = '<option value="">Selecione pagamento</option>' + 
+            paymentList.map(p => `<option value="${p.id}">${p.nome || 'Anônimo'} - R$ ${p.valor.toFixed(2)}</option>`).join('');
+    });
+}
+
+confirmPaymentBtn.addEventListener('click', async () => {
+    if (!isAdmin) { alert('Acesso negado'); return; }
+    const paymentId = paymentSelector.value;
+    if (!paymentId) { alert('Selecione um pagamento'); return; }
+    
+    try {
+        await paymentsRef.child(paymentId).update({ status: 'confirmado' });
+        showToast('Pagamento confirmado!');
+    } catch (error) {
+        showToast('Erro: ' + error.message);
+    }
+});
+
+rejectPaymentBtn.addEventListener('click', async () => {
+    if (!isAdmin) { alert('Acesso negado'); return; }
+    const paymentId = paymentSelector.value;
+    if (!paymentId) { alert('Selecione um pagamento'); return; }
+    
+    try {
+        await paymentsRef.child(paymentId).update({ status: 'rejeitado' });
+        showToast('Pagamento rejeitado');
+    } catch (error) {
+        showToast('Erro: ' + error.message);
+    }
+});
+
+// ========== CALCULATE TOTAL PRIZE ==========
+paymentsRef.orderByChild('status').equalTo('confirmado').on('value', snapshot => {
     const payments = snapshot.val();
     if (payments) {
         totalPrize = Object.values(payments).reduce((sum, p) => sum + (p.valor || 0), 0);
@@ -347,67 +484,8 @@ paymentsRef.on('value', snapshot => {
     }
 });
 
-// ========== PIX PAYMENT ==========
-function createPixPayment(amount) {
-    if (!currentUser) {
-        showToast('Faça login para pagar!');
-        openModal();
-        return;
-    }
-
-    const paymentData = {
-        transaction_amount: amount,
-        description: `Contribuição Bolão da Ennes - R$ ${amount}`,
-        payment_method_id: 'pix',
-        payer: {
-            email: currentUser.email
-        }
-    };
-
-    // Simula criação de pagamento (na vida real, isso seria feito no backend)
-    // Aqui geramos um QR Code mock para demonstração
-    const mockQrCode = `00020126580014BR.GOV.BCB.PIX0136${currentUser.email.replace('@', '')}5204000053039865404${amount.toFixed(2)}5802BR5913Bolao Ennes6009Sao Paulo62070503***6304E2F3`;
-    
-    // Salva no Firebase
-    paymentsRef.push({
-        usuario: currentUser.uid,
-        email: currentUser.email,
-        valor: amount,
-        data: firebase.database.ServerValue.TIMESTAMP,
-        status: 'pendente'
-    }).then(() => {
-        showPixModal(mockQrCode, amount);
-    }).catch(err => {
-        showToast('Erro ao processar pagamento: ' + err.message);
-    });
-}
-
-function showPixModal(qrCode, amount) {
-    qrCodeContainer.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCode)}" alt="QR Code Pix" style="width:200px;height:200px;">`;
-    pixCopyCode.textContent = qrCode;
-    pixModal.classList.remove('hide');
-    paymentStatus.innerHTML = `<p style="color:#4caf50;">✅ Pagamento de R$ ${amount.toFixed(2)} gerado! Escaneie o QR Code.</p>`;
-}
-
-document.getElementById('pix10Btn').addEventListener('click', () => createPixPayment(10));
-document.getElementById('pix20Btn').addEventListener('click', () => createPixPayment(20));
-document.getElementById('pix50Btn').addEventListener('click', () => createPixPayment(50));
-
-copyPixBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(pixCopyCode.textContent).then(() => {
-        showToast('Código Pix copiado!');
-    }).catch(() => {
-        showToast('Erro ao copiar');
-    });
-});
-
-closePixModal.addEventListener('click', () => {
-    pixModal.classList.add('hide');
-});
-
-pixModal.addEventListener('click', (e) => {
-    if (e.target === pixModal) pixModal.classList.add('hide');
-});
+// ========== LOAD PENDING PAYMENTS FOR ADMIN ==========
+loadPendingPayments();
 
 // ========== TOAST ==========
 function showToast(msg) {
@@ -421,4 +499,5 @@ function showToast(msg) {
 }
 
 console.log('⚡ Bolão da Ennes carregado!');
+console.log('Sistema de pagamento: Pix estático + confirmação manual');
 console.log('Para tornar um usuário admin: db.ref("usuarios/"+uid).update({admin: true})');
