@@ -1,728 +1,329 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>🏆 Bolão da Ennes</title>
-
-<style>
-/* ============================================================
-   BOLÃO DA ENNES — ESTILOS GERAIS
-   Tema escuro inspirado em apps esportivos.
-   Paleta: Azul (#1e6fff), Azul escuro (#0b1530), Preto (#05070d), Branco (#f5f7fb)
-   ============================================================ */
-
-:root{
-  --azul: #2979ff;
-  --azul-claro: #5b9dff;
-  --azul-escuro: #0b1530;
-  --azul-escuro-2: #0f1c3d;
-  --preto: #05070d;
-  --branco: #f5f7fb;
-  --cinza: #97a1b8;
-  --verde: #1fd17a;
-  --vermelho: #ff5470;
-  --amarelo: #ffc94d;
-  --card-bg: linear-gradient(160deg,#101b3a, #0a1228);
-  --sombra: 0 8px 24px rgba(0,0,0,0.45);
-  --radius: 18px;
-  --radius-sm: 12px;
-  --transicao: all .25s ease;
-}
-
-*{ box-sizing: border-box; margin:0; padding:0; }
-
-html,body{
-  background: var(--preto);
-  color: var(--branco);
-  font-family: 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  scroll-behavior: smooth;
-}
-
-body{
-  background: radial-gradient(circle at top, #0d1733 0%, #05070d 60%);
-  min-height: 100vh;
-  padding-bottom: 90px; /* espaço pro menu inferior mobile */
-}
-
-a{ color: inherit; text-decoration: none; }
-button{ font-family: inherit; cursor: pointer; border:none; }
-input, select, textarea{ font-family: inherit; }
-
-::-webkit-scrollbar{ width:6px; }
-::-webkit-scrollbar-thumb{ background: var(--azul); border-radius: 10px; }
-
-/* ---------- LOADING ---------- */
-#loading-overlay{
-  position: fixed; inset:0; background: var(--preto);
-  display:flex; align-items:center; justify-content:center; flex-direction:column;
-  z-index: 9999; transition: opacity .4s ease, visibility .4s ease;
-  gap: 16px;
-}
-#loading-overlay.hidden{ opacity:0; visibility: hidden; pointer-events:none; }
-.spinner{
-  width:48px; height:48px; border-radius:50%;
-  border: 4px solid rgba(41,121,255,0.2);
-  border-top-color: var(--azul);
-  animation: spin 0.9s linear infinite;
-}
-@keyframes spin{ to{ transform: rotate(360deg); } }
-
-/* ---------- HEADER ---------- */
-header.topo{
-  position: sticky; top:0; z-index: 100;
-  background: rgba(5,7,13,0.85);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  padding: 14px 16px;
-  display:flex; align-items:center; justify-content: space-between;
-}
-.logo{
-  display:flex; align-items:center; gap:8px;
-  font-size: 1.25rem; font-weight: 800;
-  letter-spacing: .3px;
-}
-.logo span.icon{ font-size: 1.4rem; }
-.logo .destaque{ color: var(--azul-claro); }
-
-.btn-admin-acesso{
-  background: rgba(41,121,255,0.12);
-  border: 1px solid rgba(41,121,255,0.4);
-  color: var(--azul-claro);
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 0.78rem;
-  font-weight: 600;
-  transition: var(--transicao);
-}
-.btn-admin-acesso:hover{ background: var(--azul); color:#fff; }
-
-/* ---------- NAV (abas) ---------- */
-nav.abas{
-  display:flex;
-  overflow-x: auto;
-  gap:8px;
-  padding: 12px 16px;
-  scrollbar-width:none;
-}
-nav.abas::-webkit-scrollbar{ display:none; }
-.aba-btn{
-  flex: 0 0 auto;
-  background: var(--azul-escuro-2);
-  color: var(--cinza);
-  padding: 10px 16px;
-  border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  white-space: nowrap;
-  border: 1px solid rgba(255,255,255,0.05);
-  transition: var(--transicao);
-}
-.aba-btn.ativa{
-  background: linear-gradient(135deg, var(--azul), #1857c4);
-  color:#fff;
-  box-shadow: 0 4px 14px rgba(41,121,255,0.4);
-}
-
-main{ padding: 0 16px 24px; max-width: 1100px; margin: 0 auto; }
-
-.secao{ display:none; animation: fadeIn .35s ease; }
-.secao.ativa{ display:block; }
-@keyframes fadeIn{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform: translateY(0);} }
-
-.titulo-secao{
-  font-size: 1.05rem;
-  font-weight: 800;
-  margin: 22px 0 12px;
-  display:flex; align-items:center; gap:8px;
-  color: var(--branco);
-}
-
-/* ---------- CARDS ---------- */
-.card{
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--sombra);
-  border: 1px solid rgba(255,255,255,0.05);
-  padding: 18px;
-  margin-bottom: 16px;
-  transition: var(--transicao);
-}
-.card:hover{ transform: translateY(-2px); }
-
-/* ---------- CARD JOGO PRINCIPAL ---------- */
-.card-jogo-principal{
-  background: linear-gradient(150deg, var(--azul-escuro) 0%, #060b18 100%);
-  border: 1px solid rgba(41,121,255,0.25);
-  text-align:center;
-}
-.jogo-confronto{
-  display:flex; align-items:center; justify-content:center;
-  gap: 18px; margin: 14px 0;
-}
-.time{
-  display:flex; flex-direction:column; align-items:center; gap:6px;
-  flex: 1; min-width: 0;
-}
-.time img{
-  width: 56px; height:56px; object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
-}
-.time span{ font-size: 0.78rem; font-weight:700; color: var(--cinza); text-align:center; }
-.vs{ font-size: 1.1rem; font-weight: 800; color: var(--azul-claro); }
-
-.jogo-info-linha{
-  display:flex; justify-content:center; gap: 18px; flex-wrap:wrap;
-  margin-top: 10px; font-size: 0.82rem; color: var(--cinza);
-}
-.jogo-info-linha b{ color: var(--branco); }
-
-.contagem-regressiva{
-  display:flex; justify-content:center; gap:10px; margin-top: 16px;
-}
-.cr-bloco{
-  background: rgba(41,121,255,0.12);
-  border: 1px solid rgba(41,121,255,0.3);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  min-width: 56px;
-  text-align:center;
-}
-.cr-bloco .num{ font-size: 1.3rem; font-weight: 800; color: var(--azul-claro); display:block;}
-.cr-bloco .label{ font-size: 0.62rem; color: var(--cinza); text-transform: uppercase;}
-
-/* ---------- GRID DE ESTATISTICAS RAPIDAS ---------- */
-.grid-stats{
-  display:grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 16px;
-}
-@media(min-width: 560px){ .grid-stats{ grid-template-columns: repeat(4,1fr); } }
-
-.stat-mini{
-  background: rgba(255,255,255,0.03);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  text-align:center;
-  border: 1px solid rgba(255,255,255,0.05);
-}
-.stat-mini .valor{ font-size: 1.15rem; font-weight: 800; color: var(--verde); }
-.stat-mini .rotulo{ font-size: 0.68rem; color: var(--cinza); margin-top:2px; }
-
-/* ---------- LISTA DE VENCEDORES ---------- */
-.vencedor-item{
-  display:flex; align-items:center; justify-content:space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.vencedor-item:last-child{ border-bottom:none; }
-.vencedor-nome{ font-weight:700; font-size:0.9rem; }
-.vencedor-premio{ color: var(--verde); font-weight:800; font-size:0.85rem; }
-.vencedor-jogo{ font-size: 0.72rem; color: var(--cinza); }
-
-/* ---------- JOGOS FUTUROS ---------- */
-.jogo-card{
-  display:flex; align-items:center; gap:12px;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  padding: 14px;
-  margin-bottom: 12px;
-  border: 1px solid rgba(255,255,255,0.05);
-  box-shadow: var(--sombra);
-}
-.jogo-card .time-mini{ display:flex; flex-direction:column; align-items:center; gap:4px; width: 70px; }
-.jogo-card .time-mini img{ width:38px; height:38px; object-fit:contain; }
-.jogo-card .time-mini span{ font-size: 0.65rem; color: var(--cinza); text-align:center; }
-.jogo-card .centro{ flex:1; text-align:center; }
-.jogo-card .placar-final{ font-size: 1.3rem; font-weight:800; }
-.jogo-card .data-hora{ font-size: 0.72rem; color: var(--cinza); margin-top:2px; }
-.badge-status{
-  font-size: 0.62rem; font-weight:700; padding: 3px 8px; border-radius:999px;
-  text-transform: uppercase; letter-spacing:.3px;
-}
-.badge-agendado{ background: rgba(41,121,255,0.15); color: var(--azul-claro); }
-.badge-encerrado{ background: rgba(31,209,122,0.15); color: var(--verde); }
-
-/* ---------- RANKING ---------- */
-.ranking-item{
-  display:flex; align-items:center; gap:12px;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.ranking-item:last-child{ border-bottom:none; }
-.ranking-pos{
-  width:32px; height:32px; border-radius:50%;
-  background: var(--azul-escuro-2);
-  display:flex; align-items:center; justify-content:center;
-  font-weight:800; font-size:0.85rem; flex-shrink:0;
-}
-.ranking-pos.top1{ background: linear-gradient(135deg,#ffd76b,#ff9f1a); color:#1a1200; }
-.ranking-pos.top2{ background: linear-gradient(135deg,#d9d9d9,#9a9a9a); color:#111; }
-.ranking-pos.top3{ background: linear-gradient(135deg,#e3a06b,#a85c2c); color:#1a0c00; }
-.ranking-info{ flex:1; min-width:0; }
-.ranking-nome{ font-weight:700; font-size:0.92rem; }
-.ranking-sub{ font-size:0.7rem; color:var(--cinza); }
-.ranking-ganho{ color: var(--verde); font-weight:800; font-size:0.9rem; white-space:nowrap; }
-
-/* ---------- FORMULÁRIOS ---------- */
-.form-grupo{ margin-bottom: 14px; }
-.form-grupo label{
-  display:block; font-size:0.78rem; color: var(--cinza); margin-bottom:6px; font-weight:600;
-}
-.form-grupo input, .form-grupo select{
-  width:100%;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: var(--branco);
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 0.95rem;
-  transition: var(--transicao);
-}
-.form-grupo input:focus, .form-grupo select:focus{
-  outline:none; border-color: var(--azul);
-  box-shadow: 0 0 0 3px rgba(41,121,255,0.2);
-}
-.linha-dupla{ display:flex; gap:12px; }
-.linha-dupla .form-grupo{ flex:1; }
-
-.btn-primario{
-  width:100%;
-  background: linear-gradient(135deg, var(--azul), #1857c4);
-  color:#fff;
-  padding: 14px;
-  border-radius: var(--radius-sm);
-  font-weight:800;
-  font-size: 0.95rem;
-  box-shadow: 0 6px 18px rgba(41,121,255,0.35);
-  transition: var(--transicao);
-}
-.btn-primario:hover{ transform: translateY(-1px); box-shadow: 0 8px 22px rgba(41,121,255,0.5); }
-.btn-primario:active{ transform: translateY(0); }
-.btn-primario:disabled{ opacity:0.5; cursor:not-allowed; }
-
-.btn-secundario{
-  background: rgba(255,255,255,0.06);
-  color: var(--branco);
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  font-weight:700;
-  font-size: 0.82rem;
-  border: 1px solid rgba(255,255,255,0.1);
-  transition: var(--transicao);
-}
-.btn-secundario:hover{ background: rgba(255,255,255,0.12); }
-
-.btn-perigo{ background: rgba(255,84,112,0.15); color: var(--vermelho); border:1px solid rgba(255,84,112,0.4); }
-.btn-perigo:hover{ background: var(--vermelho); color:#fff; }
-.btn-sucesso{ background: rgba(31,209,122,0.15); color: var(--verde); border:1px solid rgba(31,209,122,0.4); }
-.btn-sucesso:hover{ background: var(--verde); color:#06190f; }
-
-.aviso{
-  padding: 12px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 0.82rem;
-  margin-bottom: 14px;
-  display:none;
-}
-.aviso.mostrar{ display:block; animation: fadeIn .3s ease; }
-.aviso.sucesso{ background: rgba(31,209,122,0.12); color: var(--verde); border:1px solid rgba(31,209,122,0.35); }
-.aviso.erro{ background: rgba(255,84,112,0.12); color: var(--vermelho); border:1px solid rgba(255,84,112,0.35); }
-
-/* ---------- ESTATÍSTICAS ---------- */
-.stat-card-grande{
-  text-align:center;
-  padding: 22px;
-}
-.stat-card-grande .valor-grande{ font-size: 1.8rem; font-weight: 900; color: var(--azul-claro); }
-.stat-card-grande .rotulo-grande{ font-size: 0.78rem; color: var(--cinza); margin-top:6px; }
-
-/* ---------- TABS ADMIN ---------- */
-.admin-subnav{
-  display:flex; gap:8px; overflow-x:auto; padding-bottom: 8px; margin-bottom: 14px;
-}
-.admin-subnav button{
-  flex:0 0 auto;
-  background: rgba(255,255,255,0.05);
-  color: var(--cinza);
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 0.76rem;
-  font-weight:700;
-  border:1px solid rgba(255,255,255,0.08);
-}
-.admin-subnav button.ativa{ background: var(--azul); color:#fff; }
-
-.admin-painel-conteudo{ display:none; }
-.admin-painel-conteudo.ativa{ display:block; animation: fadeIn .3s ease; }
-
-.lista-admin-item{
-  display:flex; justify-content:space-between; align-items:center; gap:10px;
-  background: rgba(255,255,255,0.03);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-  margin-bottom: 8px;
-  border: 1px solid rgba(255,255,255,0.05);
-  flex-wrap: wrap;
-}
-.lista-admin-item .info{ flex:1; min-width: 140px; font-size: 0.85rem; }
-.lista-admin-item .info b{ display:block; font-size:0.92rem; }
-.lista-admin-item .acoes{ display:flex; gap:6px; flex-wrap:wrap; }
-.lista-admin-item .acoes button{ padding: 6px 10px; font-size: 0.7rem; border-radius: 8px; }
-
-.login-admin{
-  max-width: 360px;
-  margin: 40px auto;
-}
-
-.tag-pago{ background: rgba(31,209,122,0.15); color:var(--verde); padding:2px 8px; border-radius:6px; font-size:0.65rem; font-weight:700; }
-.tag-pendente{ background: rgba(255,201,77,0.15); color:var(--amarelo); padding:2px 8px; border-radius:6px; font-size:0.65rem; font-weight:700; }
-
-/* ---------- HISTÓRICO ---------- */
-.historico-item{
-  border-left: 3px solid var(--azul);
-  padding-left: 12px;
-  margin-bottom: 14px;
-}
-.historico-item .h-titulo{ font-weight:800; font-size:0.9rem; }
-.historico-item .h-sub{ font-size:0.75rem; color:var(--cinza); margin-top:2px; }
-
-/* ---------- BOTTOM NAV (MOBILE) ---------- */
-.menu-inferior{
-  position: fixed; bottom:0; left:0; right:0;
-  background: rgba(8,12,24,0.95);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255,255,255,0.06);
-  display:flex;
-  justify-content: space-around;
-  padding: 8px 4px;
-  z-index: 100;
-}
-.menu-inferior button{
-  background:none; color: var(--cinza);
-  display:flex; flex-direction:column; align-items:center; gap:2px;
-  font-size: 0.62rem; font-weight:600;
-  padding: 6px 8px; border-radius: 10px;
-  flex:1;
-  transition: var(--transicao);
-}
-.menu-inferior button .ic{ font-size: 1.15rem; }
-.menu-inferior button.ativa{ color: var(--azul-claro); background: rgba(41,121,255,0.1); }
-
-@media(min-width: 820px){
-  .menu-inferior{ display:none; }
-  body{ padding-bottom: 0; }
-  nav.abas{ justify-content:center; }
-}
-
-.vazio-msg{ text-align:center; color: var(--cinza); padding: 24px 0; font-size: 0.85rem; }
-
-footer.rodape{
-  text-align:center; padding: 24px 0 12px; color: var(--cinza); font-size: 0.7rem;
-}
-
-/* Modal */
-.modal-fundo{
-  position: fixed; inset:0; background: rgba(0,0,0,0.7);
-  display:none; align-items:center; justify-content:center; z-index: 500; padding: 16px;
-}
-.modal-fundo.mostrar{ display:flex; animation: fadeIn .2s ease; }
-.modal-caixa{
-  background: var(--azul-escuro-2);
-  border-radius: var(--radius);
-  padding: 20px;
-  max-width: 420px; width:100%;
-  max-height: 85vh; overflow-y: auto;
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: var(--sombra);
-}
-.modal-caixa h3{ margin-bottom: 14px; font-size: 1rem; }
-.modal-fechar-linha{ display:flex; justify-content:flex-end; margin-top: 10px; gap:8px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bolão da Ennes ⚽</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- Font Awesome (ícones) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
+        body { background: #0b1a2e; color: #f0f4fa; padding: 20px; min-height: 100vh; display: flex; justify-content: center; }
+        .app { max-width: 1100px; width: 100%; }
+        /* cabeçalho */
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 28px; border-bottom: 2px solid #2a4058; padding-bottom: 16px; }
+        .logo { display: flex; align-items: center; gap: 10px; }
+        .logo i { font-size: 2.2rem; color: #f5c842; }
+        .logo h1 { font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg, #f5c842, #f5a623); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .user-area { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .user-area span { background: #1f3349; padding: 8px 18px; border-radius: 40px; font-size: 0.9rem; }
+        .btn { background: #2a4058; border: none; color: white; padding: 8px 22px; border-radius: 40px; cursor: pointer; transition: 0.2s; font-weight: 600; }
+        .btn:hover { background: #3a5a7a; transform: scale(0.97); }
+        .btn-admin { background: #c44536; }
+        .btn-admin:hover { background: #a83222; }
+        .btn-outline { background: transparent; border: 1px solid #4a6a8a; }
+        /* cards */
+        .card { background: #132433; border-radius: 24px; padding: 20px 24px; margin-bottom: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); border: 1px solid #1f3750; }
+        .card h2 { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 1.5rem; margin-bottom: 18px; }
+        .card h2 i { color: #f5c842; }
+        /* grid de jogos */
+        .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .game-item { background: #0d1b2b; border-radius: 20px; padding: 16px; border-left: 6px solid #f5c842; transition: 0.2s; }
+        .game-item:hover { background: #162f44; }
+        .teams { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1.2rem; gap: 8px; }
+        .flag { font-size: 1.6rem; margin-right: 4px; }
+        .score { display: flex; align-items: center; gap: 14px; background: #1a2e42; padding: 6px 14px; border-radius: 40px; }
+        .score input { width: 50px; background: #0b1a2e; border: 1px solid #2f4a66; border-radius: 30px; padding: 6px; text-align: center; color: white; font-weight: 600; }
+        .score input:focus { outline: 2px solid #f5c842; }
+        .status { font-size: 0.8rem; padding: 4px 12px; border-radius: 30px; background: #1f3b4f; display: inline-block; margin-top: 10px; }
+        .status.finished { background: #2d5a3a; }
+        .status.future { background: #3a4a6a; }
+        .admin-panel { background: #0f1f31; border-radius: 20px; padding: 18px; margin-top: 12px; border: 1px dashed #3a5a7a; }
+        .admin-panel input, .admin-panel select { background: #1a2e42; border: 1px solid #2f4a66; padding: 10px 14px; border-radius: 40px; color: white; width: 100%; margin: 6px 0; }
+        .admin-panel .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .admin-panel button { background: #f5c842; color: #0b1a2e; font-weight: 700; border: none; padding: 10px 24px; border-radius: 40px; cursor: pointer; }
+        .admin-panel button:hover { background: #e0b032; }
+        .hide { display: none; }
+        .footer { text-align: center; opacity: 0.6; margin-top: 30px; font-size: 0.85rem; }
+        .toast { background: #1f3349; padding: 12px 24px; border-radius: 60px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); border: 1px solid #f5c842; }
+    </style>
 </head>
 <body>
+<div class="app" id="app">
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-futbol"></i>
+            <h1>Bolão da Ennes</h1>
+        </div>
+        <div class="user-area">
+            <span id="userDisplay"><i class="fas fa-user-circle"></i> Convidado</span>
+            <button id="loginBtn" class="btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            <button id="adminToggleBtn" class="btn btn-admin hide"><i class="fas fa-user-cog"></i> ADM</button>
+        </div>
+    </header>
 
-<!-- TELA DE CARREGAMENTO -->
-<div id="loading-overlay">
-  <div class="spinner"></div>
-  <div style="color:var(--cinza); font-size:0.85rem;">Carregando Bolão da Ennes...</div>
+    <!-- Próximos jogos -->
+    <section class="card">
+        <h2><i class="fas fa-calendar-alt"></i> Jogos Futuros</h2>
+        <div id="futureGames" class="games-grid"></div>
+    </section>
+
+    <!-- Jogos com resultados / ao vivo -->
+    <section class="card">
+        <h2><i class="fas fa-trophy"></i> Resultados & Jogos</h2>
+        <div id="allGames" class="games-grid"></div>
+    </section>
+
+    <!-- Painel Admin (visível apenas para admins) -->
+    <section id="adminPanel" class="card admin-panel hide">
+        <h2><i class="fas fa-shield-alt"></i> Painel Administrativo</h2>
+        <div class="row">
+            <input type="text" id="team1Input" placeholder="Time 1 (ex: Brasil)">
+            <input type="text" id="team2Input" placeholder="Time 2 (ex: Argentina)">
+            <input type="text" id="flag1Input" placeholder="🇧🇷 emoji bandeira">
+            <input type="text" id="flag2Input" placeholder="🇦🇷 emoji bandeira">
+            <input type="date" id="gameDateInput">
+            <button id="addGameBtn"><i class="fas fa-plus-circle"></i> Adicionar Jogo</button>
+        </div>
+        <div style="margin-top: 18px; display: flex; flex-wrap: wrap; gap: 12px;">
+            <select id="gameSelector" style="flex:2; min-width:160px;"><option value="">Selecione jogo para atualizar</option></select>
+            <input type="number" id="score1Update" placeholder="Gols time 1" style="flex:1; min-width:70px;">
+            <input type="number" id="score2Update" placeholder="Gols time 2" style="flex:1; min-width:70px;">
+            <button id="updateScoreBtn"><i class="fas fa-check"></i> Atualizar Placar</button>
+            <button id="deleteGameBtn" style="background:#b33;"><i class="fas fa-trash"></i> Remover</button>
+        </div>
+        <div style="margin-top:12px;">
+            <button id="toggleAdminMode" class="btn btn-outline"><i class="fas fa-eye-slash"></i> Esconder ADM</button>
+        </div>
+    </section>
+    <div class="footer">⚡ Bolão da Ennes • Resultados automáticos com Firebase</div>
 </div>
 
-<!-- CABEÇALHO -->
-<header class="topo">
-  <div class="logo">
-    <span class="icon">🏆</span> Bolão da <span class="destaque">Ennes</span>
-  </div>
-  <button class="btn-admin-acesso" id="btn-abrir-admin">🔒 Admin</button>
-</header>
+<script>
+    // ========== CONFIGURAÇÃO FIREBASE ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyAnpqLos4gtwIF6fgbh9Y9RIEZScrX33u0",
+        authDomain: "bizflow-oficial.firebaseapp.com",
+        databaseURL: "https://bizflow-oficial-default-rtdb.firebaseio.com",
+        projectId: "bizflow-oficial",
+        storageBucket: "bizflow-oficial.firebasestorage.app",
+        messagingSenderId: "767888965470",
+        appId: "1:767888965470:web:ba38371163e030adfad9cf",
+        measurementId: "G-G4702KC57C"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-<!-- NAVEGAÇÃO POR ABAS (desktop / topo) -->
-<nav class="abas" id="nav-abas">
-  <button class="aba-btn ativa" data-secao="inicio">🏠 Início</button>
-  <button class="aba-btn" data-secao="jogos">📅 Próximos Jogos</button>
-  <button class="aba-btn" data-secao="ranking">🥇 Ranking</button>
-  <button class="aba-btn" data-secao="estatisticas">📊 Estatísticas</button>
-  <button class="aba-btn" data-secao="palpite">✍️ Fazer Palpite</button>
-  <button class="aba-btn" data-secao="historico">🕘 Histórico</button>
-</nav>
+    // ========== REFERÊNCIAS DOM ==========
+    const userDisplay = document.getElementById('userDisplay');
+    const loginBtn = document.getElementById('loginBtn');
+    const adminToggleBtn = document.getElementById('adminToggleBtn');
+    const adminPanel = document.getElementById('adminPanel');
+    const futureGamesDiv = document.getElementById('futureGames');
+    const allGamesDiv = document.getElementById('allGames');
+    const gameSelector = document.getElementById('gameSelector');
 
-<main>
+    // admin inputs
+    const team1Input = document.getElementById('team1Input');
+    const team2Input = document.getElementById('team2Input');
+    const flag1Input = document.getElementById('flag1Input');
+    const flag2Input = document.getElementById('flag2Input');
+    const gameDateInput = document.getElementById('gameDateInput');
+    const addGameBtn = document.getElementById('addGameBtn');
+    const score1Update = document.getElementById('score1Update');
+    const score2Update = document.getElementById('score2Update');
+    const updateScoreBtn = document.getElementById('updateScoreBtn');
+    const deleteGameBtn = document.getElementById('deleteGameBtn');
+    const toggleAdminMode = document.getElementById('toggleAdminMode');
 
-  <!-- ===================== SEÇÃO: INÍCIO ===================== -->
-  <section class="secao ativa" id="secao-inicio">
+    // ========== ESTADO ==========
+    let currentUser = null;
+    let isAdmin = false; // simplificado: qualquer usuário logado é admin para demonstração (ou pode validar por email)
+    let gamesRef = db.ref('jogos');
 
-    <div class="card card-jogo-principal" id="card-proximo-jogo">
-      <div class="vazio-msg">Buscando próximo jogo do Brasil...</div>
-    </div>
+    // ========== AUTENTICAÇÃO ==========
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            currentUser = user;
+            userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${user.displayName || user.email || 'Usuário'}`;
+            loginBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+            // para demo: todo usuário logado tem acesso admin (pode ser refinado)
+            isAdmin = true;
+            adminToggleBtn.classList.remove('hide');
+            if (adminPanel.classList.contains('hide')) {
+                // não mostra painel automaticamente, apenas botão
+            }
+        } else {
+            currentUser = null;
+            userDisplay.innerHTML = '<i class="fas fa-user-circle"></i> Convidado';
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+            isAdmin = false;
+            adminToggleBtn.classList.add('hide');
+            adminPanel.classList.add('hide');
+        }
+    });
 
-    <div class="grid-stats" id="grid-stats-inicio">
-      <!-- preenchido via JS: valor da aposta, prêmio, participantes, palpites -->
-    </div>
+    loginBtn.addEventListener('click', () => {
+        if (currentUser) {
+            auth.signOut();
+        } else {
+            // login anônimo para demonstração
+            auth.signInAnonymously().catch(err => alert('Erro login: ' + err.message));
+        }
+    });
 
-    <h3 class="titulo-secao">🏅 Últimos Vencedores</h3>
-    <div class="card" id="card-ultimos-vencedores">
-      <div class="vazio-msg">Nenhum vencedor registrado ainda.</div>
-    </div>
-  </section>
+    // ========== ADMIN TOGGLE ==========
+    adminToggleBtn.addEventListener('click', () => {
+        if (isAdmin) {
+            adminPanel.classList.toggle('hide');
+        } else {
+            alert('Apenas administradores');
+        }
+    });
+    toggleAdminMode.addEventListener('click', () => {
+        adminPanel.classList.add('hide');
+    });
 
-  <!-- ===================== SEÇÃO: PRÓXIMOS JOGOS ===================== -->
-  <section class="secao" id="secao-jogos">
-    <h3 class="titulo-secao">📅 Próximos Jogos do Brasil</h3>
-    <div id="lista-proximos-jogos">
-      <div class="vazio-msg">Carregando jogos...</div>
-    </div>
-  </section>
+    // ========== FUNÇÕES DE RENDER ==========
+    function renderGames(snapshot) {
+        const games = snapshot.val();
+        if (!games) {
+            futureGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo cadastrado.</p>';
+            allGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo disponível.</p>';
+            gameSelector.innerHTML = '<option value="">Selecione jogo</option>';
+            return;
+        }
+        const gameIds = Object.keys(games);
+        const gameList = gameIds.map(id => ({ id, ...games[id] }));
 
-  <!-- ===================== SEÇÃO: RANKING ===================== -->
-  <section class="secao" id="secao-ranking">
-    <h3 class="titulo-secao">🥇 Top Apostadores</h3>
-    <div class="card">
-      <div id="lista-ranking">
-        <div class="vazio-msg">Nenhum apostador no ranking ainda.</div>
-      </div>
-    </div>
-  </section>
+        // ordenar por data (futuro primeiro)
+        gameList.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
 
-  <!-- ===================== SEÇÃO: ESTATÍSTICAS ===================== -->
-  <section class="secao" id="secao-estatisticas">
-    <h3 class="titulo-secao">📊 Estatísticas do Bolão</h3>
-    <div class="grid-stats" id="grid-estatisticas-gerais"></div>
+        // separar futuros e com placar
+        const future = gameList.filter(g => !g.placar1 && !g.placar2);
+        const finished = gameList.filter(g => g.placar1 !== undefined && g.placar2 !== undefined);
 
-    <h3 class="titulo-secao">🎯 Placar Mais Apostado</h3>
-    <div class="card" id="card-placar-mais-apostado">
-      <div class="vazio-msg">Ainda não há palpites suficientes.</div>
-    </div>
-  </section>
+        // render future
+        if (future.length === 0) {
+            futureGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo futuro.</p>';
+        } else {
+            futureGamesDiv.innerHTML = future.map(g => `
+                <div class="game-item">
+                    <div class="teams">
+                        <span><span class="flag">${g.flag1 || '🏳️'}</span> ${g.time1 || 'Time 1'}</span>
+                        <span style="font-size:0.9rem; color:#aac;">vs</span>
+                        <span>${g.time2 || 'Time 2'} <span class="flag">${g.flag2 || '🏳️'}</span></span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-top: 12px;">
+                        <span class="status future"><i class="far fa-clock"></i> ${g.data || 'Data não definida'}</span>
+                        <span><i class="fas fa-hourglass-half"></i> Aguardando</span>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-  <!-- ===================== SEÇÃO: FAZER PALPITE ===================== -->
-  <section class="secao" id="secao-palpite">
-    <h3 class="titulo-secao">✍️ Fazer Palpite</h3>
-    <div class="card">
-      <div class="aviso" id="aviso-palpite"></div>
-      <form id="form-palpite">
-        <div class="form-grupo">
-          <label>Seu nome completo</label>
-          <input type="text" id="palpite-nome" placeholder="Digite seu nome" required maxlength="60">
-        </div>
-        <div class="linha-dupla">
-          <div class="form-grupo">
-            <label id="label-placar-brasil">Placar Brasil</label>
-            <input type="number" id="palpite-brasil" min="0" max="20" placeholder="0" required>
-          </div>
-          <div class="form-grupo">
-            <label id="label-placar-adversario">Placar Adversário</label>
-            <input type="number" id="palpite-adversario" min="0" max="20" placeholder="0" required>
-          </div>
-        </div>
-        <div class="form-grupo">
-          <label>Valor da aposta atual</label>
-          <input type="text" id="palpite-valor-info" disabled>
-        </div>
-        <button type="submit" class="btn-primario">Enviar Palpite</button>
-      </form>
-    </div>
-  </section>
+        // render todos (incluindo finalizados)
+        if (gameList.length === 0) {
+            allGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo registrado.</p>';
+        } else {
+            allGamesDiv.innerHTML = gameList.map(g => {
+                const hasScore = (g.placar1 !== undefined && g.placar2 !== undefined);
+                const statusClass = hasScore ? 'finished' : 'future';
+                const statusText = hasScore ? '✅ Finalizado' : '⏳ Pendente';
+                return `
+                    <div class="game-item" style="border-left-color: ${hasScore ? '#4caf50' : '#f5c842'}">
+                        <div class="teams">
+                            <span><span class="flag">${g.flag1 || '🏳️'}</span> ${g.time1 || 'Time 1'}</span>
+                            <span class="score">
+                                ${hasScore ? `<strong>${g.placar1}</strong> - <strong>${g.placar2}</strong>` : '⚽ vs ⚽'}
+                            </span>
+                            <span>${g.time2 || 'Time 2'} <span class="flag">${g.flag2 || '🏳️'}</span></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top: 12px;">
+                            <span class="status ${statusClass}">${statusText}</span>
+                            <span style="font-size:0.8rem; opacity:0.7;">${g.data || ''}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
 
-  <!-- ===================== SEÇÃO: HISTÓRICO ===================== -->
-  <section class="secao" id="secao-historico">
-    <h3 class="titulo-secao">🕘 Histórico de Bolões</h3>
-    <div class="card" id="card-historico">
-      <div class="vazio-msg">Nenhum bolão finalizado ainda.</div>
-    </div>
-  </section>
+        // popular selector do admin
+        gameSelector.innerHTML = '<option value="">Selecione jogo</option>' + 
+            gameList.map(g => `<option value="${g.id}">${g.time1} vs ${g.time2}</option>`).join('');
+    }
 
-  <!-- ===================== SEÇÃO: PAINEL ADMIN ===================== -->
-  <section class="secao" id="secao-admin">
+    // ========== LISTENER EM TEMPO REAL ==========
+    gamesRef.on('value', snapshot => {
+        renderGames(snapshot);
+    });
 
-    <!-- LOGIN -->
-    <div class="card login-admin" id="card-login-admin">
-      <h3 class="titulo-secao" style="margin-top:0;">🔒 Acesso Administrativo</h3>
-      <div class="aviso" id="aviso-login"></div>
-      <form id="form-login-admin">
-        <div class="form-grupo">
-          <label>Senha do painel</label>
-          <input type="password" id="senha-admin" placeholder="Digite a senha" required>
-        </div>
-        <button type="submit" class="btn-primario">Entrar</button>
-      </form>
-    </div>
+    // ========== ADMIN: ADICIONAR JOGO ==========
+    addGameBtn.addEventListener('click', () => {
+        if (!isAdmin) { alert('Acesso negado'); return; }
+        const time1 = team1Input.value.trim();
+        const time2 = team2Input.value.trim();
+        const flag1 = flag1Input.value.trim() || '🏳️';
+        const flag2 = flag2Input.value.trim() || '🏳️';
+        const data = gameDateInput.value || '2026-06-25';
+        if (!time1 || !time2) {
+            alert('Preencha os nomes dos times.');
+            return;
+        }
+        const newGame = {
+            time1, time2, flag1, flag2, data,
+            placar1: null,
+            placar2: null,
+            criadoEm: firebase.database.ServerValue.TIMESTAMP
+        };
+        gamesRef.push(newGame).then(() => {
+            team1Input.value = ''; team2Input.value = ''; flag1Input.value = ''; flag2Input.value = '';
+            alert('Jogo adicionado!');
+        }).catch(err => alert('Erro: '+err.message));
+    });
 
-    <!-- PAINEL (visível após login) -->
-    <div id="painel-admin-conteudo" style="display:none;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h3 class="titulo-secao" style="margin:0;">⚙️ Painel Administrativo</h3>
-        <button class="btn-secundario" id="btn-sair-admin">Sair</button>
-      </div>
+    // ========== ADMIN: ATUALIZAR PLACAR ==========
+    updateScoreBtn.addEventListener('click', () => {
+        if (!isAdmin) { alert('Acesso negado'); return; }
+        const gameId = gameSelector.value;
+        if (!gameId) { alert('Selecione um jogo.'); return; }
+        const s1 = parseInt(score1Update.value);
+        const s2 = parseInt(score2Update.value);
+        if (isNaN(s1) || isNaN(s2) || s1 < 0 || s2 < 0) {
+            alert('Insira valores válidos (números inteiros >= 0)');
+            return;
+        }
+        gamesRef.child(gameId).update({
+            placar1: s1,
+            placar2: s2
+        }).then(() => {
+            alert('Placar atualizado!');
+            score1Update.value = ''; score2Update.value = '';
+        }).catch(err => alert('Erro: '+err.message));
+    });
 
-      <div class="admin-subnav" id="admin-subnav">
-        <button data-painel="config" class="ativa">⚙️ Configurações</button>
-        <button data-painel="jogos">⚽ Jogos</button>
-        <button data-painel="participantes">👥 Participantes</button>
-        <button data-painel="palpites">✍️ Palpites</button>
-        <button data-painel="pagamentos">💰 Pagamentos</button>
-        <button data-painel="estatisticasadmin">📊 Estatísticas</button>
-      </div>
+    // ========== ADMIN: REMOVER JOGO ==========
+    deleteGameBtn.addEventListener('click', () => {
+        if (!isAdmin) { alert('Acesso negado'); return; }
+        const gameId = gameSelector.value;
+        if (!gameId) { alert('Selecione um jogo.'); return; }
+        if (confirm('Remover este jogo permanentemente?')) {
+            gamesRef.child(gameId).remove().then(() => {
+                alert('Jogo removido.');
+            }).catch(err => alert('Erro: '+err.message));
+        }
+    });
 
-      <!-- CONFIGURAÇÕES -->
-      <div class="admin-painel-conteudo ativa" id="admin-config">
-        <div class="card">
-          <div class="aviso" id="aviso-config"></div>
-          <div class="form-grupo">
-            <label>Valor da aposta (R$)</label>
-            <input type="number" id="cfg-valor-aposta" min="0" step="0.01">
-          </div>
-          <div class="form-grupo">
-            <label>Limite de apostas por pessoa</label>
-            <input type="number" id="cfg-limite-apostas" min="1">
-          </div>
-          <div class="form-grupo">
-            <label>Status das apostas</label>
-            <select id="cfg-status-apostas">
-              <option value="aberto">Aberto</option>
-              <option value="fechado">Encerrado</option>
-            </select>
-          </div>
-          <div class="form-grupo">
-            <label>Saldo acumulado para próximo bolão (R$)</label>
-            <input type="number" id="cfg-saldo-acumulado" min="0" step="0.01">
-          </div>
-          <button class="btn-primario" id="btn-salvar-config">Salvar Configurações</button>
-        </div>
-      </div>
+    // ========== FECHAR PAINEL ADMIN AO CARREGAR (se não logado) ==========
+    // já controlado pelo onAuthStateChanged
 
-      <!-- JOGOS -->
-      <div class="admin-painel-conteudo" id="admin-jogos">
-        <div class="card">
-          <h3 style="margin-bottom:10px; font-size:0.95rem;">➕ Adicionar Jogo Manualmente</h3>
-          <div class="aviso" id="aviso-jogo-admin"></div>
-          <div class="form-grupo">
-            <label>Time adversário</label>
-            <input type="text" id="jogo-adversario" placeholder="Ex: Argentina">
-          </div>
-          <div class="form-grupo">
-            <label>Escudo do adversário (URL)</label>
-            <input type="text" id="jogo-escudo" placeholder="https://...">
-          </div>
-          <div class="linha-dupla">
-            <div class="form-grupo">
-              <label>Data</label>
-              <input type="date" id="jogo-data">
-            </div>
-            <div class="form-grupo">
-              <label>Hora</label>
-              <input type="time" id="jogo-hora">
-            </div>
-          </div>
-          <button class="btn-primario" id="btn-add-jogo">Adicionar Jogo</button>
-        </div>
-        <h3 style="margin:14px 0 8px; font-size:0.9rem;">📋 Jogos Cadastrados</h3>
-        <div id="lista-admin-jogos"><div class="vazio-msg">Nenhum jogo cadastrado.</div></div>
-      </div>
-
-      <!-- PARTICIPANTES -->
-      <div class="admin-painel-conteudo" id="admin-participantes">
-        <div class="card">
-          <h3 style="margin-bottom:10px; font-size:0.95rem;">➕ Adicionar Participante</h3>
-          <div class="aviso" id="aviso-participante-admin"></div>
-          <div class="form-grupo">
-            <label>Nome</label>
-            <input type="text" id="participante-nome">
-          </div>
-          <button class="btn-primario" id="btn-add-participante">Adicionar</button>
-        </div>
-        <h3 style="margin:14px 0 8px; font-size:0.9rem;">👥 Participantes Cadastrados</h3>
-        <div id="lista-admin-participantes"><div class="vazio-msg">Nenhum participante.</div></div>
-      </div>
-
-      <!-- PALPITES -->
-      <div class="admin-painel-conteudo" id="admin-palpites">
-        <div class="card">
-          <h3 style="margin-bottom:10px; font-size:0.95rem;">➕ Adicionar Palpite</h3>
-          <div class="aviso" id="aviso-palpite-admin"></div>
-          <div class="form-grupo">
-            <label>Nome</label>
-            <input type="text" id="adm-palpite-nome">
-          </div>
-          <div class="linha-dupla">
-            <div class="form-grupo">
-              <label>Placar Brasil</label>
-              <input type="number" id="adm-palpite-brasil" min="0">
-            </div>
-            <div class="form-grupo">
-              <label>Placar Adversário</label>
-              <input type="number" id="adm-palpite-adversario" min="0">
-            </div>
-          </div>
-          <button class="btn-primario" id="btn-add-palpite-admin">Adicionar Palpite</button>
-        </div>
-        <h3 style="margin:14px 0 8px; font-size:0.9rem;">✍️ Todos os Palpites</h3>
-        <div id="lista-admin-palpites"><div class="vazio-msg">Nenhum palpite registrado.</div></div>
-      </div>
-
-      <!-- PAGAMENTOS -->
-      <div class="admin-painel-conteudo" id="admin-pagamentos">
-        <h3 style="margin-bottom:8px; font-size:0.9rem;">💰 Controle de Pagamentos</h3>
-        <div id="lista-admin-pagamentos"><div class="vazio-msg">Nenhum participante.</div></div>
-      </div>
-
-      <!-- ESTATISTICAS ADMIN -->
-      <div class="admin-painel-conteudo" id="admin-estatisticasadmin">
-        <div class="grid-stats" id="grid-estatisticas-admin"></div>
-      </div>
-
-    </div>
-  </section>
-
-</main>
-
-<!-- MENU INFERIOR (MOBILE) -->
-<nav class="menu-inferior" id="menu-inferior">
-  <button class="ativa" data-secao="inicio"><span class="ic">🏠</span>Início</button>
-  <button data-secao="jogos"><span class="ic">📅</span>Jogos</button>
-  <button data-secao="ranking"><span class="ic">🥇</span>Ranking</button>
-  <button data-secao="palpite"><span class="ic">✍️</span>Palpite</button>
-  <button data-secao="estatisticas"><span class="ic">📊</span>Stats</button>
-</nav>
-
-<!-- MODAL DE EDIÇÃO GENÉRICO -->
-<div class="modal-fundo" id="modal-edicao">
-  <div class="modal-caixa">
-    <h3 id="modal-titulo">Editar</h3>
-    <div id="modal-corpo"></div>
-    <div class="modal-fechar-linha">
-      <button class="btn-secundario" id="modal-cancelar">Cancelar</button>
-      <button class="btn-primario" id="modal-salvar" style="width:auto;">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<footer class="rodape">
-  🏆 Bolão da Ennes — Projeto temporário para a Copa do Mundo
-</footer>
-
-<!-- Script principal do site (módulo ES, conecta com Firebase e API) -->
-<script type="module" src="script.js"></script>
+    console.log('⚡ Bolão da Ennes carregado com Firebase!');
+</script>
 </body>
 </html>
