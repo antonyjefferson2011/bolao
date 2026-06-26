@@ -8,29 +8,28 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <!-- Font Awesome (ícones) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, system-ui, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
         body { background: #0b1a2e; color: #f0f4fa; padding: 20px; min-height: 100vh; display: flex; justify-content: center; }
         .app { max-width: 1100px; width: 100%; }
-        /* cabeçalho */
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 28px; border-bottom: 2px solid #2a4058; padding-bottom: 16px; }
         .logo { display: flex; align-items: center; gap: 10px; }
         .logo i { font-size: 2.2rem; color: #f5c842; }
         .logo h1 { font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(135deg, #f5c842, #f5a623); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .user-area { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .user-area { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .user-area span { background: #1f3349; padding: 8px 18px; border-radius: 40px; font-size: 0.9rem; }
         .btn { background: #2a4058; border: none; color: white; padding: 8px 22px; border-radius: 40px; cursor: pointer; transition: 0.2s; font-weight: 600; }
         .btn:hover { background: #3a5a7a; transform: scale(0.97); }
         .btn-admin { background: #c44536; }
         .btn-admin:hover { background: #a83222; }
         .btn-outline { background: transparent; border: 1px solid #4a6a8a; }
-        /* cards */
+        .btn-success { background: #2d7a3a; }
+        .btn-success:hover { background: #1f5f2a; }
         .card { background: #132433; border-radius: 24px; padding: 20px 24px; margin-bottom: 28px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); border: 1px solid #1f3750; }
         .card h2 { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 1.5rem; margin-bottom: 18px; }
         .card h2 i { color: #f5c842; }
-        /* grid de jogos */
         .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
         .game-item { background: #0d1b2b; border-radius: 20px; padding: 16px; border-left: 6px solid #f5c842; transition: 0.2s; }
         .game-item:hover { background: #162f44; }
@@ -49,7 +48,13 @@
         .admin-panel button:hover { background: #e0b032; }
         .hide { display: none; }
         .footer { text-align: center; opacity: 0.6; margin-top: 30px; font-size: 0.85rem; }
-        .toast { background: #1f3349; padding: 12px 24px; border-radius: 60px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); border: 1px solid #f5c842; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 999; }
+        .modal-content { background: #132433; padding: 30px; border-radius: 30px; max-width: 400px; width: 90%; border: 1px solid #2a4058; }
+        .modal-content h2 { margin-bottom: 20px; }
+        .modal-content input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 40px; border: 1px solid #2f4a66; background: #0b1a2e; color: white; }
+        .modal-content .btn { width: 100%; margin-top: 10px; }
+        .modal-content .toggle-link { color: #f5c842; cursor: pointer; text-align: center; display: block; margin-top: 12px; }
+        .toast { background: #1f3349; padding: 12px 24px; border-radius: 60px; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); border: 1px solid #f5c842; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -62,7 +67,7 @@
         </div>
         <div class="user-area">
             <span id="userDisplay"><i class="fas fa-user-circle"></i> Convidado</span>
-            <button id="loginBtn" class="btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+            <button id="authBtn" class="btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
             <button id="adminToggleBtn" class="btn btn-admin hide"><i class="fas fa-user-cog"></i> ADM</button>
         </div>
     </header>
@@ -73,13 +78,13 @@
         <div id="futureGames" class="games-grid"></div>
     </section>
 
-    <!-- Jogos com resultados / ao vivo -->
+    <!-- Todos os jogos -->
     <section class="card">
         <h2><i class="fas fa-trophy"></i> Resultados & Jogos</h2>
         <div id="allGames" class="games-grid"></div>
     </section>
 
-    <!-- Painel Admin (visível apenas para admins) -->
+    <!-- Painel Admin -->
     <section id="adminPanel" class="card admin-panel hide">
         <h2><i class="fas fa-shield-alt"></i> Painel Administrativo</h2>
         <div class="row">
@@ -91,7 +96,7 @@
             <button id="addGameBtn"><i class="fas fa-plus-circle"></i> Adicionar Jogo</button>
         </div>
         <div style="margin-top: 18px; display: flex; flex-wrap: wrap; gap: 12px;">
-            <select id="gameSelector" style="flex:2; min-width:160px;"><option value="">Selecione jogo para atualizar</option></select>
+            <select id="gameSelector" style="flex:2; min-width:160px;"><option value="">Selecione jogo</option></select>
             <input type="number" id="score1Update" placeholder="Gols time 1" style="flex:1; min-width:70px;">
             <input type="number" id="score2Update" placeholder="Gols time 2" style="flex:1; min-width:70px;">
             <button id="updateScoreBtn"><i class="fas fa-check"></i> Atualizar Placar</button>
@@ -104,8 +109,21 @@
     <div class="footer">⚡ Bolão da Ennes • Resultados automáticos com Firebase</div>
 </div>
 
+<!-- Modal de Login/Cadastro -->
+<div id="authModal" class="modal hide">
+    <div class="modal-content">
+        <h2 id="modalTitle">Entrar</h2>
+        <input type="email" id="emailInput" placeholder="Email" autocomplete="email">
+        <input type="password" id="passwordInput" placeholder="Senha" autocomplete="current-password">
+        <div id="authError" style="color:#e74c3c; font-size:0.9rem; margin:8px 0;"></div>
+        <button id="submitAuthBtn" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> Entrar</button>
+        <span class="toggle-link" id="toggleAuthMode">Criar conta</span>
+        <button id="closeModalBtn" class="btn btn-outline" style="margin-top:8px;">Fechar</button>
+    </div>
+</div>
+
 <script>
-    // ========== CONFIGURAÇÃO FIREBASE ==========
+    // ========== FIREBASE ==========
     const firebaseConfig = {
         apiKey: "AIzaSyAnpqLos4gtwIF6fgbh9Y9RIEZScrX33u0",
         authDomain: "bizflow-oficial.firebaseapp.com",
@@ -120,16 +138,14 @@
     const auth = firebase.auth();
     const db = firebase.database();
 
-    // ========== REFERÊNCIAS DOM ==========
+    // ========== DOM ==========
     const userDisplay = document.getElementById('userDisplay');
-    const loginBtn = document.getElementById('loginBtn');
+    const authBtn = document.getElementById('authBtn');
     const adminToggleBtn = document.getElementById('adminToggleBtn');
     const adminPanel = document.getElementById('adminPanel');
     const futureGamesDiv = document.getElementById('futureGames');
     const allGamesDiv = document.getElementById('allGames');
     const gameSelector = document.getElementById('gameSelector');
-
-    // admin inputs
     const team1Input = document.getElementById('team1Input');
     const team2Input = document.getElementById('team2Input');
     const flag1Input = document.getElementById('flag1Input');
@@ -141,40 +157,122 @@
     const updateScoreBtn = document.getElementById('updateScoreBtn');
     const deleteGameBtn = document.getElementById('deleteGameBtn');
     const toggleAdminMode = document.getElementById('toggleAdminMode');
+    const authModal = document.getElementById('authModal');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const submitAuthBtn = document.getElementById('submitAuthBtn');
+    const toggleAuthMode = document.getElementById('toggleAuthMode');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const modalTitle = document.getElementById('modalTitle');
+    const authError = document.getElementById('authError');
 
     // ========== ESTADO ==========
     let currentUser = null;
-    let isAdmin = false; // simplificado: qualquer usuário logado é admin para demonstração (ou pode validar por email)
-    let gamesRef = db.ref('jogos');
+    let isAdmin = false;
+    let isLoginMode = true;
+    const gamesRef = db.ref('jogos');
+    const usersRef = db.ref('usuarios');
 
     // ========== AUTENTICAÇÃO ==========
     auth.onAuthStateChanged(user => {
         if (user) {
             currentUser = user;
             userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${user.displayName || user.email || 'Usuário'}`;
-            loginBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
-            // para demo: todo usuário logado tem acesso admin (pode ser refinado)
-            isAdmin = true;
-            adminToggleBtn.classList.remove('hide');
-            if (adminPanel.classList.contains('hide')) {
-                // não mostra painel automaticamente, apenas botão
-            }
+            authBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+            // Verifica se é admin no banco
+            usersRef.child(user.uid).once('value').then(snap => {
+                const userData = snap.val();
+                isAdmin = userData?.admin === true;
+                if (isAdmin) {
+                    adminToggleBtn.classList.remove('hide');
+                } else {
+                    adminToggleBtn.classList.add('hide');
+                    adminPanel.classList.add('hide');
+                }
+            }).catch(() => {
+                isAdmin = false;
+                adminToggleBtn.classList.add('hide');
+                adminPanel.classList.add('hide');
+            });
         } else {
             currentUser = null;
             userDisplay.innerHTML = '<i class="fas fa-user-circle"></i> Convidado';
-            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+            authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
             isAdmin = false;
             adminToggleBtn.classList.add('hide');
             adminPanel.classList.add('hide');
         }
     });
 
-    loginBtn.addEventListener('click', () => {
+    // ========== MODAL ==========
+    function openModal() {
+        authModal.classList.remove('hide');
+        authError.textContent = '';
+        emailInput.value = '';
+        passwordInput.value = '';
+        isLoginMode = true;
+        modalTitle.textContent = 'Entrar';
+        submitAuthBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+        toggleAuthMode.textContent = 'Criar conta';
+    }
+
+    function closeModal() {
+        authModal.classList.add('hide');
+    }
+
+    authBtn.addEventListener('click', () => {
         if (currentUser) {
             auth.signOut();
         } else {
-            // login anônimo para demonstração
-            auth.signInAnonymously().catch(err => alert('Erro login: ' + err.message));
+            openModal();
+        }
+    });
+
+    closeModalBtn.addEventListener('click', closeModal);
+    authModal.addEventListener('click', (e) => {
+        if (e.target === authModal) closeModal();
+    });
+
+    toggleAuthMode.addEventListener('click', () => {
+        isLoginMode = !isLoginMode;
+        if (isLoginMode) {
+            modalTitle.textContent = 'Entrar';
+            submitAuthBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+            toggleAuthMode.textContent = 'Criar conta';
+        } else {
+            modalTitle.textContent = 'Criar Conta';
+            submitAuthBtn.innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar';
+            toggleAuthMode.textContent = 'Já tenho conta';
+        }
+        authError.textContent = '';
+    });
+
+    submitAuthBtn.addEventListener('click', async () => {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value.trim();
+        if (!email || !password) {
+            authError.textContent = 'Preencha email e senha.';
+            return;
+        }
+        authError.textContent = '';
+        try {
+            if (isLoginMode) {
+                await auth.signInWithEmailAndPassword(email, password);
+                closeModal();
+            } else {
+                const cred = await auth.createUserWithEmailAndPassword(email, password);
+                // Salva usuário no Realtime Database
+                await usersRef.child(cred.user.uid).set({
+                    email: email,
+                    admin: false,  // por padrão não é admin
+                    criadoEm: firebase.database.ServerValue.TIMESTAMP
+                });
+                closeModal();
+                // Mostra toast
+                showToast('Conta criada! Faça login para acessar.');
+            }
+        } catch (error) {
+            authError.textContent = error.message;
         }
     });
 
@@ -190,7 +288,7 @@
         adminPanel.classList.add('hide');
     });
 
-    // ========== FUNÇÕES DE RENDER ==========
+    // ========== RENDER ==========
     function renderGames(snapshot) {
         const games = snapshot.val();
         if (!games) {
@@ -201,15 +299,12 @@
         }
         const gameIds = Object.keys(games);
         const gameList = gameIds.map(id => ({ id, ...games[id] }));
-
-        // ordenar por data (futuro primeiro)
         gameList.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
 
-        // separar futuros e com placar
-        const future = gameList.filter(g => !g.placar1 && !g.placar2);
-        const finished = gameList.filter(g => g.placar1 !== undefined && g.placar2 !== undefined);
+        const future = gameList.filter(g => g.placar1 === undefined || g.placar1 === null);
+        const withScore = gameList.filter(g => g.placar1 !== undefined && g.placar1 !== null);
 
-        // render future
+        // Future
         if (future.length === 0) {
             futureGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo futuro.</p>';
         } else {
@@ -228,12 +323,12 @@
             `).join('');
         }
 
-        // render todos (incluindo finalizados)
+        // All games
         if (gameList.length === 0) {
             allGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo registrado.</p>';
         } else {
             allGamesDiv.innerHTML = gameList.map(g => {
-                const hasScore = (g.placar1 !== undefined && g.placar2 !== undefined);
+                const hasScore = (g.placar1 !== undefined && g.placar1 !== null);
                 const statusClass = hasScore ? 'finished' : 'future';
                 const statusText = hasScore ? '✅ Finalizado' : '⏳ Pendente';
                 return `
@@ -254,17 +349,16 @@
             }).join('');
         }
 
-        // popular selector do admin
+        // Populate selector
         gameSelector.innerHTML = '<option value="">Selecione jogo</option>' + 
             gameList.map(g => `<option value="${g.id}">${g.time1} vs ${g.time2}</option>`).join('');
     }
 
-    // ========== LISTENER EM TEMPO REAL ==========
     gamesRef.on('value', snapshot => {
         renderGames(snapshot);
     });
 
-    // ========== ADMIN: ADICIONAR JOGO ==========
+    // ========== ADMIN: ADD ==========
     addGameBtn.addEventListener('click', () => {
         if (!isAdmin) { alert('Acesso negado'); return; }
         const time1 = team1Input.value.trim();
@@ -276,19 +370,18 @@
             alert('Preencha os nomes dos times.');
             return;
         }
-        const newGame = {
+        gamesRef.push({
             time1, time2, flag1, flag2, data,
             placar1: null,
             placar2: null,
             criadoEm: firebase.database.ServerValue.TIMESTAMP
-        };
-        gamesRef.push(newGame).then(() => {
+        }).then(() => {
             team1Input.value = ''; team2Input.value = ''; flag1Input.value = ''; flag2Input.value = '';
-            alert('Jogo adicionado!');
+            showToast('Jogo adicionado!');
         }).catch(err => alert('Erro: '+err.message));
     });
 
-    // ========== ADMIN: ATUALIZAR PLACAR ==========
+    // ========== ADMIN: UPDATE SCORE ==========
     updateScoreBtn.addEventListener('click', () => {
         if (!isAdmin) { alert('Acesso negado'); return; }
         const gameId = gameSelector.value;
@@ -296,34 +389,46 @@
         const s1 = parseInt(score1Update.value);
         const s2 = parseInt(score2Update.value);
         if (isNaN(s1) || isNaN(s2) || s1 < 0 || s2 < 0) {
-            alert('Insira valores válidos (números inteiros >= 0)');
+            alert('Insira valores válidos (números >= 0)');
             return;
         }
         gamesRef.child(gameId).update({
             placar1: s1,
             placar2: s2
         }).then(() => {
-            alert('Placar atualizado!');
+            showToast('Placar atualizado!');
             score1Update.value = ''; score2Update.value = '';
         }).catch(err => alert('Erro: '+err.message));
     });
 
-    // ========== ADMIN: REMOVER JOGO ==========
+    // ========== ADMIN: DELETE ==========
     deleteGameBtn.addEventListener('click', () => {
         if (!isAdmin) { alert('Acesso negado'); return; }
         const gameId = gameSelector.value;
         if (!gameId) { alert('Selecione um jogo.'); return; }
         if (confirm('Remover este jogo permanentemente?')) {
             gamesRef.child(gameId).remove().then(() => {
-                alert('Jogo removido.');
+                showToast('Jogo removido.');
             }).catch(err => alert('Erro: '+err.message));
         }
     });
 
-    // ========== FECHAR PAINEL ADMIN AO CARREGAR (se não logado) ==========
-    // já controlado pelo onAuthStateChanged
+    // ========== TOAST ==========
+    function showToast(msg) {
+        const old = document.querySelector('.toast');
+        if (old) old.remove();
+        const div = document.createElement('div');
+        div.className = 'toast';
+        div.textContent = msg;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 3000);
+    }
 
-    console.log('⚡ Bolão da Ennes carregado com Firebase!');
+    // ========== FUNÇÃO PARA CRIAR ADMIN MANUALMENTE (opcional) ==========
+    // Para tornar um usuário admin, execute no console do navegador:
+    // firebase.database().ref('usuarios/'+uid).update({admin: true})
+    console.log('⚡ Bolão da Ennes carregado!');
+    console.log('Para tornar um usuário admin: db.ref("usuarios/"+uid).update({admin: true})');
 </script>
 </body>
 </html>
