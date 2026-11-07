@@ -1,7 +1,7 @@
 /* Delicatta Cristã — interações da página de vendas */
 
 const CONFIG = {
-  whatsapp: '5511999999999', // troque pelo número real, com DDI + DDD
+  whatsapp: '5586998174869', // troque pelo número real, com DDI + DDD
   instagram: 'delicattacrista',
 };
 
