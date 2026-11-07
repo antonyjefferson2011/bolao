@@ -93,6 +93,10 @@ h2 em {
   outline-offset: 3px;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .sprite {
   position: absolute;
   width: 0;
@@ -688,6 +692,14 @@ h2 em {
   margin-top: 8px;
   font-size: 0.9rem;
   letter-spacing: 0.04em;
+}
+
+.products__loading {
+  grid-column: 1 / -1;
+  padding: 40px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .products__note {

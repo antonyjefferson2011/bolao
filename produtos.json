@@ -1,0 +1,65 @@
+{
+  "aviso": "Peças em pequena produção · Feito à mão",
+  "produtos": [
+    {
+      "id": "vestido-aurora",
+      "nome": "Vestido Aurora",
+      "categoria": "vestidos",
+      "preco": 289,
+      "imagem": "assets/vestido-aurora.jpg",
+      "meta": "Crepe leve · bege · P, M e G",
+      "tag": "Novo",
+      "destaque": false
+    },
+    {
+      "id": "vestido-linho",
+      "nome": "Vestido Linho Clássico",
+      "categoria": "vestidos",
+      "preco": 329,
+      "imagem": "assets/vestido-linho.jpg",
+      "meta": "Linho · areia · P, M e G",
+      "tag": "",
+      "destaque": false
+    },
+    {
+      "id": "vestido-cetim",
+      "nome": "Vestido Cetim Nuvem",
+      "categoria": "vestidos",
+      "preco": 379,
+      "imagem": "assets/vestido-cetim.jpg",
+      "meta": "Cetim · marfim · P, M e G",
+      "tag": "Mais vendido",
+      "destaque": true
+    },
+    {
+      "id": "cardiga-bosque",
+      "nome": "Cardigã Bosque",
+      "categoria": "trico",
+      "preco": 249,
+      "imagem": "assets/cardiga-bosque.jpg",
+      "meta": "Tricô · creme · único",
+      "tag": "",
+      "destaque": false
+    },
+    {
+      "id": "sueter-aconchego",
+      "nome": "Suéter Aconchego",
+      "categoria": "trico",
+      "preco": 219,
+      "imagem": "assets/sueter-aconchego.jpg",
+      "meta": "Tricô mescla · areia · P e M",
+      "tag": "Últimas peças",
+      "destaque": false
+    },
+    {
+      "id": "blusa-seda",
+      "nome": "Blusa Seda Marfim",
+      "categoria": "blusas",
+      "preco": 189,
+      "imagem": "assets/blusa-seda.jpg",
+      "meta": "Seda · marfim · P, M e G",
+      "tag": "",
+      "destaque": false
+    }
+  ]
+}

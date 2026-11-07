@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Delicatta Cristã · Roupas delicadas com propósito</title>
-  <meta name="description" content="Delicatta Cristã: roupas delicadas em tons de linho, tricô e cetim. Peças leves e atemporais, feitas em pequena produção, com envio para todo o Brasil." />
+  <meta name="description" content="Delicatta Cristã: roupas delicadas em tons de linho, tricô e cetim. Peças leves e atemporais, feitas em pequena produção." />
   <meta name="theme-color" content="#FBF8F3" />
   <meta property="og:title" content="Delicatta Cristã · Roupas delicadas com propósito" />
   <meta property="og:description" content="Peças leves, tons de linho e caimento suave para vestir a fé em cada detalhe." />
@@ -34,8 +34,8 @@
 
   <a class="skip" href="#colecao">Ir para a coleção</a>
 
-  <div class="announce">
-    <p>Frete grátis acima de R$ 299 · Enviamos para todo o Brasil</p>
+  <div class="announce" id="announce">
+    <p id="announceText">Peças em pequena produção · Feito à mão</p>
   </div>
 
   <header class="header" id="header">
@@ -74,7 +74,7 @@
     <a href="#essencia">Nossa essência</a>
     <a href="#depoimentos">Depoimentos</a>
     <a href="#duvidas">Dúvidas</a>
-    <a class="mobile-menu__cta" href="https://wa.me/5511999999999" target="_blank" rel="noopener">Falar no WhatsApp</a>
+    <a class="mobile-menu__cta" href="https://wa.me/5586998174869" target="_blank" rel="noopener">Falar no WhatsApp</a>
   </div>
 
   <main id="topo">
@@ -92,7 +92,7 @@
             Ver coleção
             <svg class="icon"><use href="#i-arrow"/></svg>
           </a>
-          <a class="btn btn--ghost" href="https://wa.me/5511999999999" target="_blank" rel="noopener">
+          <a class="btn btn--ghost" href="https://wa.me/5586998174869" target="_blank" rel="noopener">
             <svg class="icon"><use href="#i-whats"/></svg>
             Falar no WhatsApp
           </a>
@@ -128,7 +128,7 @@
           <h2 class="section__title">Peças para o dia a dia</h2>
           <p class="section__lead">Tecidos naturais, modelagem delicada e tons que combinam entre si.</p>
         </div>
-        <div class="filters" role="group" aria-label="Filtrar por categoria">
+        <div class="filters" id="filters" role="group" aria-label="Filtrar por categoria">
           <button class="filter is-active" data-filter="todos" type="button">Todas</button>
           <button class="filter" data-filter="vestidos" type="button">Vestidos</button>
           <button class="filter" data-filter="trico" type="button">Tricô</button>
@@ -137,107 +137,31 @@
       </div>
 
       <div class="products" id="products">
-        <article class="product" data-id="vestido-aurora" data-name="Vestido Aurora" data-price="289" data-image="assets/vestido-aurora.jpg" data-category="vestidos">
-          <div class="product__media">
-            <img src="assets/vestido-aurora.jpg" alt="Vestido Aurora bege de um ombro só" width="800" height="1067" loading="lazy" />
-            <span class="product__tag">Novo</span>
-            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
-          </div>
-          <div class="product__info">
-            <h3 class="product__name">Vestido Aurora</h3>
-            <p class="product__meta">Crepe leve · bege · P, M e G</p>
-            <p class="product__price">R$ 289,00</p>
-          </div>
-        </article>
-
-        <article class="product" data-id="vestido-linho" data-name="Vestido Linho Clássico" data-price="329" data-image="assets/vestido-linho.jpg" data-category="vestidos">
-          <div class="product__media">
-            <img src="assets/vestido-linho.jpg" alt="Vestido longo de linho cru com mangas bufantes" width="800" height="1067" loading="lazy" />
-            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
-          </div>
-          <div class="product__info">
-            <h3 class="product__name">Vestido Linho Clássico</h3>
-            <p class="product__meta">Linho · areia · P, M e G</p>
-            <p class="product__price">R$ 329,00</p>
-          </div>
-        </article>
-
-        <article class="product" data-id="vestido-cetim" data-name="Vestido Cetim Nuvem" data-price="379" data-image="assets/vestido-cetim.jpg" data-category="vestidos">
-          <div class="product__media">
-            <img src="assets/vestido-cetim.jpg" alt="Vestido de cetim marfim com casaco camel" width="800" height="1067" loading="lazy" />
-            <span class="product__tag">Mais vendido</span>
-            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
-          </div>
-          <div class="product__info">
-            <h3 class="product__name">Vestido Cetim Nuvem</h3>
-            <p class="product__meta">Cetim · marfim · P, M e G</p>
-            <p class="product__price">R$ 379,00</p>
-          </div>
-        </article>
-
-        <article class="product" data-id="cardiga-bosque" data-name="Cardigã Bosque" data-price="249" data-image="assets/cardiga-bosque.jpg" data-category="trico">
-          <div class="product__media">
-            <img src="assets/cardiga-bosque.jpg" alt="Cardigã de tricô creme com laço de fita" width="800" height="1067" loading="lazy" />
-            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
-          </div>
-          <div class="product__info">
-            <h3 class="product__name">Cardigã Bosque</h3>
-            <p class="product__meta">Tricô · creme · único</p>
-            <p class="product__price">R$ 249,00</p>
-          </div>
-        </article>
-
-        <article class="product" data-id="sueter-aconchego" data-name="Suéter Aconchego" data-price="219" data-image="assets/sueter-aconchego.jpg" data-category="trico">
-          <div class="product__media">
-            <img src="assets/sueter-aconchego.jpg" alt="Suéter de tricô mescla areia de gola alta" width="800" height="1067" loading="lazy" />
-            <span class="product__tag">Últimas peças</span>
-            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
-          </div>
-          <div class="product__info">
-            <h3 class="product__name">Suéter Aconchego</h3>
-            <p class="product__meta">Tricô mescla · areia · P e M</p>
-            <p class="product__price">R$ 219,00</p>
-          </div>
-        </article>
-
-        <article class="product" data-id="blusa-seda" data-name="Blusa Seda Marfim" data-price="189" data-image="assets/blusa-seda.jpg" data-category="blusas">
-          <div class="product__media">
-            <img src="assets/blusa-seda.jpg" alt="Detalhe de blusa de seda marfim com alças finas" width="800" height="1067" loading="lazy" />
-            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
-          </div>
-          <div class="product__info">
-            <h3 class="product__name">Blusa Seda Marfim</h3>
-            <p class="product__meta">Seda · marfim · P, M e G</p>
-            <p class="product__price">R$ 189,00</p>
-          </div>
-        </article>
+        <p class="products__loading">Carregando a coleção…</p>
       </div>
 
       <p class="products__note">
-        Não achou seu tamanho? <a href="https://wa.me/5511999999999" target="_blank" rel="noopener">Fale com a gente</a> — trabalhamos com encomendas.
+        Não achou seu tamanho? <a href="https://wa.me/5586998174869" target="_blank" rel="noopener">Fale com a gente</a> — trabalhamos com encomendas.
       </p>
     </section>
 
     <!-- Peça do mês -->
-    <section class="section section--sand spotlight">
+    <section class="section section--sand spotlight" id="spotlight" hidden>
       <div class="spotlight__media reveal">
-        <img src="assets/peca-mes.jpg" alt="Vestido de cetim marfim com casaco de lã camel, em luz natural" width="1000" height="1500" loading="lazy" />
+        <img id="spotlightImg" src="assets/peca-mes.jpg" alt="" width="1000" height="1500" loading="lazy" />
       </div>
       <div class="spotlight__text reveal">
         <p class="eyebrow">Peça do mês</p>
-        <h2 class="section__title">Vestido Cetim Nuvem</h2>
-        <p>
-          O cair da seda, o brilho discreto e a alça fina: uma peça que resolve o almoço de domingo
-          e o casamento à noite. Escolhida à mão para quem gosta de elegância sem esforço.
-        </p>
+        <h2 class="section__title" id="spotlightName">Vestido Cetim Nuvem</h2>
+        <p id="spotlightDesc">Escolhida à mão para quem gosta de elegância sem esforço.</p>
         <ul class="ticks">
-          <li><svg class="icon"><use href="#i-check"/></svg> Cetim com forro, não marca</li>
-          <li><svg class="icon"><use href="#i-check"/></svg> Modelagem reta, do 36 ao 44</li>
-          <li><svg class="icon"><use href="#i-check"/></svg> Combina com o casaco Bosque</li>
+          <li><svg class="icon"><use href="#i-check"/></svg> Peça em pequena produção</li>
+          <li><svg class="icon"><use href="#i-check"/></svg> Modelagem confortável e atemporal</li>
+          <li><svg class="icon"><use href="#i-check"/></svg> Combina com outras peças da coleção</li>
         </ul>
         <div class="spotlight__buy">
-          <span class="spotlight__price">R$ 379,00</span>
-          <button class="btn btn--dark" type="button" data-add data-id="vestido-cetim" data-name="Vestido Cetim Nuvem" data-price="379" data-image="assets/vestido-cetim.jpg">
+          <span class="spotlight__price" id="spotlightPrice">R$ 0,00</span>
+          <button class="btn btn--dark" type="button" data-add id="spotlightAdd">
             Quero essa peça
             <svg class="icon"><use href="#i-arrow"/></svg>
           </button>
@@ -321,7 +245,7 @@
         <p class="eyebrow">Dúvidas</p>
         <h2 class="section__title">Antes de escolher</h2>
         <p class="section__lead">Se ficar qualquer dúvida, é só chamar no WhatsApp — respondemos no mesmo dia.</p>
-        <a class="btn btn--ghost" href="https://wa.me/5511999999999" target="_blank" rel="noopener">
+        <a class="btn btn--ghost" href="https://wa.me/5586998174869" target="_blank" rel="noopener">
           <svg class="icon"><use href="#i-whats"/></svg>
           Falar com a Delicatta
         </a>
@@ -356,7 +280,7 @@
       <h2>Uma peça nova,<br /><em>um cuidado a mais</em></h2>
       <p class="cta__lead">Nos conte a ocasião e o seu tamanho. A gente monta uma seleção pensando em você.</p>
       <div class="cta__actions">
-        <a class="btn btn--dark" href="https://wa.me/5511999999999" target="_blank" rel="noopener">
+        <a class="btn btn--dark" href="https://wa.me/5586998174869" target="_blank" rel="noopener">
           <svg class="icon"><use href="#i-whats"/></svg>
           Chamar no WhatsApp
         </a>
@@ -392,12 +316,12 @@
         <a href="#duvidas">Trocas e devoluções</a>
         <a href="#duvidas">Guia de tamanhos</a>
         <a href="#duvidas">Prazos de envio</a>
-        <a href="https://wa.me/5511999999999" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://wa.me/5586998174869" target="_blank" rel="noopener">WhatsApp</a>
       </div>
       <div class="footer__col">
         <h3>Redes</h3>
         <a href="https://instagram.com/delicattacrista" target="_blank" rel="noopener">Instagram</a>
-        <a href="https://wa.me/5511999999999" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://wa.me/5586998174869" target="_blank" rel="noopener">WhatsApp</a>
         <a href="mailto:contato@delicatta.com.br">contato@delicatta.com.br</a>
       </div>
     </div>
@@ -423,7 +347,7 @@
         <strong id="drawerTotal">R$ 0,00</strong>
       </div>
       <p class="drawer__note">Frete grátis acima de R$ 299 · Pix com 5% de desconto</p>
-      <a class="btn btn--dark btn--full" id="checkoutBtn" href="https://wa.me/5511999999999" target="_blank" rel="noopener">
+      <a class="btn btn--dark btn--full" id="checkoutBtn" href="https://wa.me/5586998174869" target="_blank" rel="noopener">
         <svg class="icon"><use href="#i-whats"/></svg>
         Finalizar no WhatsApp
       </a>
@@ -431,7 +355,7 @@
     </div>
   </aside>
 
-  <a class="float-wa" href="https://wa.me/5511999999999" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+  <a class="float-wa" href="https://wa.me/5586998174869" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
     <svg class="icon"><use href="#i-whats"/></svg>
   </a>
 
