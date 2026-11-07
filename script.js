@@ -1,503 +1,344 @@
-// ========== FIREBASE CONFIG ==========
-const firebaseConfig = {
-    apiKey: "AIzaSyAnpqLos4gtwIF6fgbh9Y9RIEZScrX33u0",
-    authDomain: "bizflow-oficial.firebaseapp.com",
-    databaseURL: "https://bizflow-oficial-default-rtdb.firebaseio.com",
-    projectId: "bizflow-oficial",
-    storageBucket: "bizflow-oficial.firebasestorage.app",
-    messagingSenderId: "767888965470",
-    appId: "1:767888965470:web:ba38371163e030adfad9cf",
-    measurementId: "G-G4702KC57C"
+/* Delicatta Cristã — interações da página de vendas */
+
+const CONFIG = {
+  whatsapp: '5511999999999', // troque pelo número real, com DDI + DDD
+  instagram: 'delicattacrista',
 };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.database();
+/* --------------------------------------------------------------------------
+   Catálogo (lido do HTML, para a sacola acompanhar os produtos da página)
+   -------------------------------------------------------------------------- */
 
-// ========== DOM REFS ==========
-const userDisplay = document.getElementById('userDisplay');
-const authBtn = document.getElementById('authBtn');
-const adminToggleBtn = document.getElementById('adminToggleBtn');
-const adminPanel = document.getElementById('adminPanel');
-const futureGamesDiv = document.getElementById('futureGames');
-const allGamesDiv = document.getElementById('allGames');
-const gameSelector = document.getElementById('gameSelector');
-const paymentSelector = document.getElementById('paymentSelector');
-const team1Input = document.getElementById('team1Input');
-const team2Input = document.getElementById('team2Input');
-const flag1Input = document.getElementById('flag1Input');
-const flag2Input = document.getElementById('flag2Input');
-const gameDateInput = document.getElementById('gameDateInput');
-const addGameBtn = document.getElementById('addGameBtn');
-const score1Update = document.getElementById('score1Update');
-const score2Update = document.getElementById('score2Update');
-const updateScoreBtn = document.getElementById('updateScoreBtn');
-const deleteGameBtn = document.getElementById('deleteGameBtn');
-const toggleAdminMode = document.getElementById('toggleAdminMode');
-const adminEmailInput = document.getElementById('adminEmailInput');
-const makeAdminBtn = document.getElementById('makeAdminBtn');
-const totalGamesEl = document.getElementById('totalGames');
-const finishedGamesEl = document.getElementById('finishedGames');
-const totalUsersEl = document.getElementById('totalUsers');
-const totalPrizeEl = document.getElementById('totalPrize');
+const catalog = new Map();
 
-// Payment elements
-const paymentName = document.getElementById('paymentName');
-const paymentValue = document.getElementById('paymentValue');
-const paymentKey = document.getElementById('paymentKey');
-const registerPaymentBtn = document.getElementById('registerPaymentBtn');
-const userPayments = document.getElementById('userPayments');
-const copyPixBtn = document.getElementById('copyPixBtn');
-const pixCodeDisplay = document.getElementById('pixCodeDisplay');
-const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
-const rejectPaymentBtn = document.getElementById('rejectPaymentBtn');
-
-// Auth Modal
-const authModal = document.getElementById('authModal');
-const emailInput = document.getElementById('emailInput');
-const passwordInput = document.getElementById('passwordInput');
-const submitAuthBtn = document.getElementById('submitAuthBtn');
-const toggleAuthMode = document.getElementById('toggleAuthMode');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const modalTitle = document.getElementById('modalTitle');
-const authError = document.getElementById('authError');
-
-// ========== STATE ==========
-let currentUser = null;
-let isAdmin = false;
-let isLoginMode = true;
-let totalPrize = 0;
-const gamesRef = db.ref('jogos');
-const usersRef = db.ref('usuarios');
-const paymentsRef = db.ref('pagamentos');
-
-// ========== AUTH ==========
-auth.onAuthStateChanged(user => {
-    if (user) {
-        currentUser = user;
-        userDisplay.innerHTML = `<i class="fas fa-user-circle"></i> ${user.displayName || user.email || 'Usuário'}`;
-        authBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
-        
-        usersRef.child(user.uid).once('value').then(snap => {
-            const userData = snap.val();
-            isAdmin = userData?.admin === true;
-            if (isAdmin) {
-                adminToggleBtn.classList.remove('hide');
-            } else {
-                adminToggleBtn.classList.add('hide');
-                adminPanel.classList.add('hide');
-            }
-        });
-        loadUserPayments();
-    } else {
-        currentUser = null;
-        userDisplay.innerHTML = '<i class="fas fa-user-circle"></i> Convidado';
-        authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
-        isAdmin = false;
-        adminToggleBtn.classList.add('hide');
-        adminPanel.classList.add('hide');
-        userPayments.innerHTML = '<p style="opacity:0.6; text-align:center;">Faça login para ver seus pagamentos</p>';
-    }
+document.querySelectorAll('.product').forEach((card) => {
+  catalog.set(card.dataset.id, {
+    id: card.dataset.id,
+    name: card.dataset.name,
+    price: Number(card.dataset.price),
+    image: card.dataset.image,
+  });
 });
 
-// ========== MODAL ==========
-function openModal() {
-    authModal.classList.remove('hide');
-    authError.textContent = '';
-    emailInput.value = '';
-    passwordInput.value = '';
-    isLoginMode = true;
-    modalTitle.textContent = 'Entrar';
-    submitAuthBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
-    toggleAuthMode.textContent = 'Criar conta';
-}
+/* --------------------------------------------------------------------------
+   Estado da sacola
+   -------------------------------------------------------------------------- */
 
-function closeModal() {
-    authModal.classList.add('hide');
-}
+const STORAGE_KEY = 'delicatta_sacola';
 
-authBtn.addEventListener('click', () => {
-    if (currentUser) {
-        auth.signOut();
-    } else {
-        openModal();
-    }
-});
-
-closeModalBtn.addEventListener('click', closeModal);
-authModal.addEventListener('click', (e) => {
-    if (e.target === authModal) closeModal();
-});
-
-toggleAuthMode.addEventListener('click', () => {
-    isLoginMode = !isLoginMode;
-    if (isLoginMode) {
-        modalTitle.textContent = 'Entrar';
-        submitAuthBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
-        toggleAuthMode.textContent = 'Criar conta';
-    } else {
-        modalTitle.textContent = 'Criar Conta';
-        submitAuthBtn.innerHTML = '<i class="fas fa-user-plus"></i> Cadastrar';
-        toggleAuthMode.textContent = 'Já tenho conta';
-    }
-    authError.textContent = '';
-});
-
-submitAuthBtn.addEventListener('click', async () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    if (!email || !password) {
-        authError.textContent = 'Preencha email e senha.';
-        return;
-    }
-    authError.textContent = '';
-    try {
-        if (isLoginMode) {
-            await auth.signInWithEmailAndPassword(email, password);
-            closeModal();
-        } else {
-            const cred = await auth.createUserWithEmailAndPassword(email, password);
-            await usersRef.child(cred.user.uid).set({
-                email: email,
-                admin: false,
-                criadoEm: firebase.database.ServerValue.TIMESTAMP
-            });
-            closeModal();
-            showToast('Conta criada! Faça login para acessar.');
-        }
-    } catch (error) {
-        authError.textContent = error.message;
-    }
-});
-
-// ========== ADMIN ==========
-adminToggleBtn.addEventListener('click', () => {
-    if (isAdmin) {
-        adminPanel.classList.toggle('hide');
-    } else {
-        alert('Apenas administradores');
-    }
-});
-
-toggleAdminMode.addEventListener('click', () => {
-    adminPanel.classList.add('hide');
-});
-
-// Make Admin
-makeAdminBtn.addEventListener('click', async () => {
-    if (!isAdmin) { alert('Acesso negado'); return; }
-    const email = adminEmailInput.value.trim();
-    if (!email) { alert('Digite um email'); return; }
-    
-    try {
-        const snapshot = await usersRef.orderByChild('email').equalTo(email).once('value');
-        if (!snapshot.exists()) {
-            showToast('Usuário não encontrado');
-            return;
-        }
-        const userKey = Object.keys(snapshot.val())[0];
-        await usersRef.child(userKey).update({ admin: true });
-        showToast(`Usuário ${email} agora é admin!`);
-        adminEmailInput.value = '';
-    } catch (error) {
-        showToast('Erro: ' + error.message);
-    }
-});
-
-// ========== ADD GAME ==========
-addGameBtn.addEventListener('click', () => {
-    if (!isAdmin) { alert('Acesso negado'); return; }
-    const time1 = team1Input.value.trim();
-    const time2 = team2Input.value.trim();
-    const flag1 = flag1Input.value.trim() || '🏳️';
-    const flag2 = flag2Input.value.trim() || '🏳️';
-    const data = gameDateInput.value || new Date().toISOString().split('T')[0];
-    if (!time1 || !time2) {
-        alert('Preencha os nomes dos times.');
-        return;
-    }
-    gamesRef.push({
-        time1, time2, flag1, flag2, data,
-        placar1: null,
-        placar2: null,
-        criadoEm: firebase.database.ServerValue.TIMESTAMP
-    }).then(() => {
-        team1Input.value = ''; team2Input.value = ''; flag1Input.value = ''; flag2Input.value = '';
-        showToast('Jogo adicionado!');
-    }).catch(err => alert('Erro: '+err.message));
-});
-
-// ========== UPDATE SCORE ==========
-updateScoreBtn.addEventListener('click', () => {
-    if (!isAdmin) { alert('Acesso negado'); return; }
-    const gameId = gameSelector.value;
-    if (!gameId) { alert('Selecione um jogo.'); return; }
-    const s1 = parseInt(score1Update.value);
-    const s2 = parseInt(score2Update.value);
-    if (isNaN(s1) || isNaN(s2) || s1 < 0 || s2 < 0) {
-        alert('Insira valores válidos (números >= 0)');
-        return;
-    }
-    gamesRef.child(gameId).update({
-        placar1: s1,
-        placar2: s2
-    }).then(() => {
-        showToast('Placar atualizado!');
-        score1Update.value = ''; score2Update.value = '';
-    }).catch(err => alert('Erro: '+err.message));
-});
-
-// ========== DELETE GAME ==========
-deleteGameBtn.addEventListener('click', () => {
-    if (!isAdmin) { alert('Acesso negado'); return; }
-    const gameId = gameSelector.value;
-    if (!gameId) { alert('Selecione um jogo.'); return; }
-    if (confirm('Remover este jogo permanentemente?')) {
-        gamesRef.child(gameId).remove().then(() => {
-            showToast('Jogo removido.');
-        }).catch(err => alert('Erro: '+err.message));
-    }
-});
-
-// ========== RENDER ==========
-function renderGames(snapshot) {
-    const games = snapshot.val();
-    if (!games) {
-        futureGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo cadastrado.</p>';
-        allGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo disponível.</p>';
-        gameSelector.innerHTML = '<option value="">Selecione jogo</option>';
-        totalGamesEl.textContent = '0';
-        finishedGamesEl.textContent = '0';
-        return;
-    }
-    const gameIds = Object.keys(games);
-    const gameList = gameIds.map(id => ({ id, ...games[id] }));
-    gameList.sort((a,b) => (a.data || '').localeCompare(b.data || ''));
-
-    const future = gameList.filter(g => g.placar1 === undefined || g.placar1 === null);
-    const withScore = gameList.filter(g => g.placar1 !== undefined && g.placar1 !== null);
-
-    totalGamesEl.textContent = gameList.length;
-    finishedGamesEl.textContent = withScore.length;
-
-    // Future
-    if (future.length === 0) {
-        futureGamesDiv.innerHTML = '<p style="opacity:0.6;">Nenhum jogo futuro.</p>';
-    } else {
-        futureGamesDiv.innerHTML = future.map(g => `
-            <div class="game-item">
-                <div class="teams">
-                    <span><span class="flag">${g.flag1 || '🏳️'}</span> ${g.time1 || 'Time 1'}</span>
-                    <span style="font-size:0.9rem; color:#aac;">vs</span>
-                    <span>${g.time2 || 'Time 2'} <span class="flag">${g.flag2 || '🏳️'}</span></span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-top: 12px;">
-                    <span class="status future"><i class="far fa-clock"></i> ${g.data || 'Data não definida'}</span>
-                    <span><i class="fas fa-hourglass-half"></i> Aguardando</span>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // All games
-    allGamesDiv.innerHTML = gameList.map(g => {
-        const hasScore = (g.placar1 !== undefined && g.placar1 !== null);
-        const statusClass = hasScore ? 'finished' : 'future';
-        const statusText = hasScore ? '✅ Finalizado' : '⏳ Pendente';
-        return `
-            <div class="game-item" style="border-left-color: ${hasScore ? '#4caf50' : '#f5c842'}">
-                <div class="teams">
-                    <span><span class="flag">${g.flag1 || '🏳️'}</span> ${g.time1 || 'Time 1'}</span>
-                    <span class="score">
-                        ${hasScore ? `<strong>${g.placar1}</strong> - <strong>${g.placar2}</strong>` : '⚽ vs ⚽'}
-                    </span>
-                    <span>${g.time2 || 'Time 2'} <span class="flag">${g.flag2 || '🏳️'}</span></span>
-                </div>
-                <div style="display:flex; justify-content:space-between; margin-top: 12px;">
-                    <span class="status ${statusClass}">${statusText}</span>
-                    <span style="font-size:0.8rem; opacity:0.7;">${g.data || ''}</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    // Populate selector
-    gameSelector.innerHTML = '<option value="">Selecione jogo</option>' + 
-        gameList.map(g => `<option value="${g.id}">${g.time1} vs ${g.time2}</option>`).join('');
-}
-
-gamesRef.on('value', snapshot => {
-    renderGames(snapshot);
-});
-
-// ========== USERS COUNT ==========
-usersRef.on('value', snapshot => {
-    const users = snapshot.val();
-    totalUsersEl.textContent = users ? Object.keys(users).length : '0';
-});
-
-// ========== PAYMENTS SYSTEM ==========
-// Pix Code (estático)
-const PIX_CODE = '00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540BR5913Bolao Ennes6009Sao Paulo62070503***6304E2F3';
-const PIX_QR_URL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(PIX_CODE)}`;
-
-// Copiar Pix
-copyPixBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(pixCodeDisplay.textContent).then(() => {
-        showToast('Código Pix copiado!');
-    }).catch(() => {
-        showToast('Erro ao copiar');
+function readCart() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    if (!saved || typeof saved !== 'object') return {};
+    const cart = {};
+    Object.entries(saved).forEach(([id, qty]) => {
+      if (catalog.has(id) && Number(qty) > 0) cart[id] = Math.min(99, Number(qty));
     });
+    return cart;
+  } catch {
+    return {};
+  }
+}
+
+let cart = readCart();
+
+function saveCart() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+  } catch {
+    /* modo privado: a sacola só dura a visita */
+  }
+}
+
+function money(value) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
+function cartItems() {
+  return Object.entries(cart)
+    .map(([id, qty]) => ({ ...catalog.get(id), qty }))
+    .filter((item) => item.name);
+}
+
+function cartTotal() {
+  return cartItems().reduce((sum, item) => sum + item.price * item.qty, 0);
+}
+
+/* --------------------------------------------------------------------------
+   Elementos
+   -------------------------------------------------------------------------- */
+
+const drawer = document.getElementById('drawer');
+const drawerBody = document.getElementById('drawerBody');
+const drawerFoot = document.getElementById('drawerFoot');
+const drawerTotal = document.getElementById('drawerTotal');
+const drawerClose = document.getElementById('drawerClose');
+const overlay = document.getElementById('overlay');
+const bagBtn = document.getElementById('bagBtn');
+const bagCount = document.getElementById('bagCount');
+const checkoutBtn = document.getElementById('checkoutBtn');
+const clearBtn = document.getElementById('clearBtn');
+const toast = document.getElementById('toast');
+const header = document.getElementById('header');
+const menuBtn = document.getElementById('menuBtn');
+const mobileMenu = document.getElementById('mobileMenu');
+
+/* --------------------------------------------------------------------------
+   Links de WhatsApp e Instagram
+   -------------------------------------------------------------------------- */
+
+function whatsappUrl(text) {
+  const base = `https://wa.me/${CONFIG.whatsapp}`;
+  return text ? `${base}?text=${encodeURIComponent(text)}` : base;
+}
+
+document.querySelectorAll('a[href^="https://wa.me/"]').forEach((link) => {
+  link.href = whatsappUrl();
+  link.target = '_blank';
+  link.rel = 'noopener';
 });
 
-// Registrar pagamento
-registerPaymentBtn.addEventListener('click', async () => {
-    if (!currentUser) {
-        showToast('Faça login para registrar um pagamento!');
-        openModal();
-        return;
-    }
+const instaLink = document.querySelector('a[href^="https://instagram.com/"]');
+if (instaLink) instaLink.href = `https://instagram.com/${CONFIG.instagram}`;
 
-    const nome = paymentName.value.trim();
-    const valor = parseFloat(paymentValue.value);
-    const chave = paymentKey.value.trim();
+/* --------------------------------------------------------------------------
+   Sacola: renderização
+   -------------------------------------------------------------------------- */
 
-    if (!nome || !valor || !chave) {
-        showToast('Preencha todos os campos');
-        return;
-    }
+function renderCart() {
+  const items = cartItems();
+  const count = items.reduce((sum, item) => sum + item.qty, 0);
 
-    if (isNaN(valor) || valor <= 0) {
-        showToast('Insira um valor válido');
-        return;
-    }
+  bagCount.textContent = count;
+  bagBtn.setAttribute('aria-label', count ? `Abrir sacola, ${count} ${count === 1 ? 'peça' : 'peças'}` : 'Abrir sacola, vazia');
 
-    try {
-        await paymentsRef.push({
-            usuario: currentUser.uid,
-            email: currentUser.email,
-            nome: nome,
-            valor: valor,
-            chave: chave,
-            status: 'pendente',
-            data: firebase.database.ServerValue.TIMESTAMP
-        });
-        showToast('Pagamento registrado! Aguardando confirmação.');
-        paymentName.value = '';
-        paymentValue.value = '';
-        paymentKey.value = '';
-    } catch (error) {
-        showToast('Erro: ' + error.message);
-    }
-});
+  if (!items.length) {
+    drawerBody.innerHTML = `
+      <p class="empty">
+        <strong>Sua sacola está vazia</strong>
+        Escolha uma peça da coleção e ela aparece aqui.
+      </p>`;
+    drawerFoot.hidden = true;
+    return;
+  }
 
-// Carregar pagamentos do usuário
-function loadUserPayments() {
-    if (!currentUser) return;
-    
-    paymentsRef.orderByChild('usuario').equalTo(currentUser.uid).on('value', snapshot => {
-        const payments = snapshot.val();
-        if (!payments) {
-            userPayments.innerHTML = '<p style="opacity:0.6; text-align:center;">Nenhum pagamento registrado</p>';
-            return;
-        }
+  drawerBody.innerHTML = items
+    .map((item) => `
+      <div class="cart-item">
+        <img class="cart-item__img" src="${item.image}" alt="${escapeHtml(item.name)}" width="72" height="92" loading="lazy" />
+        <div>
+          <p class="cart-item__name">${escapeHtml(item.name)}</p>
+          <p class="cart-item__meta">${money(item.price)}</p>
+          <div class="cart-item__qty">
+            <button class="qty-btn" type="button" data-act="dec" data-id="${item.id}" aria-label="Diminuir quantidade de ${escapeHtml(item.name)}">
+              <svg class="icon"><use href="#i-minus"/></svg>
+            </button>
+            <span>${item.qty}</span>
+            <button class="qty-btn" type="button" data-act="inc" data-id="${item.id}" aria-label="Aumentar quantidade de ${escapeHtml(item.name)}">
+              <svg class="icon"><use href="#i-plus"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="cart-item__side">
+          <strong>${money(item.price * item.qty)}</strong>
+          <button class="cart-item__remove" type="button" data-act="remove" data-id="${item.id}">Remover</button>
+        </div>
+      </div>`)
+    .join('');
 
-        const paymentList = Object.entries(payments).map(([id, p]) => ({ id, ...p }));
-        paymentList.sort((a, b) => b.data - a.data);
+  const total = cartTotal();
+  drawerTotal.textContent = money(total);
+  drawerFoot.hidden = false;
 
-        userPayments.innerHTML = paymentList.map(p => {
-            const statusClass = p.status || 'pendente';
-            const statusText = {
-                'pendente': '⏳ Pendente',
-                'confirmado': '✅ Confirmado',
-                'rejeitado': '❌ Rejeitado'
-            }[statusClass] || '⏳ Pendente';
+  const lines = items
+    .map((item) => `• ${item.name} — ${item.qty} un. — ${money(item.price * item.qty)}`)
+    .join('\n');
 
-            return `
-                <div class="payment-item ${statusClass}">
-                    <div>
-                        <strong>${p.nome || 'Anônimo'}</strong>
-                        <span style="opacity:0.7; font-size:0.85rem;"> - R$ ${p.valor.toFixed(2)}</span>
-                        <div style="font-size:0.75rem; opacity:0.5; margin-top:4px;">
-                            ${p.chave ? 'Chave: ' + p.chave : ''}
-                            ${p.data ? ' • ' + new Date(p.data).toLocaleDateString() : ''}
-                        </div>
-                    </div>
-                    <span class="status-badge ${statusClass}">${statusText}</span>
-                </div>
-            `;
-        }).join('');
+  checkoutBtn.href = whatsappUrl(
+    `Olá! Vim pelo site da Delicatta Cristã e quero fazer este pedido:\n\n${lines}\n\nTotal: ${money(total)}\n\nPode me ajudar com tamanho e frete?`
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Sacola: ações
+   -------------------------------------------------------------------------- */
+
+function toastMessage(message) {
+  toast.textContent = message;
+  toast.classList.add('is-visible');
+  clearTimeout(toastMessage.timer);
+  toastMessage.timer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
+}
+
+function addToCart(product) {
+  if (!product || !product.id) return;
+  cart[product.id] = (cart[product.id] || 0) + 1;
+  saveCart();
+  renderCart();
+  toastMessage(`${product.name} foi para a sacola`);
+  openCart();
+}
+
+function changeQty(id, delta) {
+  if (!cart[id]) return;
+  cart[id] += delta;
+  if (cart[id] <= 0) delete cart[id];
+  if (cart[id] > 99) cart[id] = 99;
+  saveCart();
+  renderCart();
+}
+
+function removeItem(id) {
+  delete cart[id];
+  saveCart();
+  renderCart();
+}
+
+function openCart() {
+  renderCart();
+  drawer.classList.add('is-open');
+  drawer.setAttribute('aria-hidden', 'false');
+  overlay.hidden = false;
+  requestAnimationFrame(() => overlay.classList.add('is-visible'));
+  document.body.classList.add('no-scroll');
+  drawerClose.focus({ preventScroll: true });
+}
+
+function closeCart() {
+  drawer.classList.remove('is-open');
+  drawer.setAttribute('aria-hidden', 'true');
+  overlay.classList.remove('is-visible');
+  document.body.classList.remove('no-scroll');
+  setTimeout(() => {
+    if (!drawer.classList.contains('is-open')) overlay.hidden = true;
+  }, 400);
+  bagBtn.focus({ preventScroll: true });
+}
+
+document.addEventListener('click', (event) => {
+  const addButton = event.target.closest('[data-add]');
+  if (addButton) {
+    const source = addButton.closest('.product') || addButton;
+    addToCart({
+      id: source.dataset.id,
+      name: source.dataset.name,
+      price: Number(source.dataset.price),
+      image: source.dataset.image,
     });
-}
+    return;
+  }
 
-// ========== ADMIN: CONFIRM/REJECT PAYMENTS ==========
-function loadPendingPayments() {
-    if (!isAdmin) return;
-    
-    paymentsRef.orderByChild('status').equalTo('pendente').on('value', snapshot => {
-        const payments = snapshot.val();
-        if (!payments) {
-            paymentSelector.innerHTML = '<option value="">Nenhum pagamento pendente</option>';
-            return;
-        }
-        const paymentList = Object.entries(payments).map(([id, p]) => ({ id, ...p }));
-        paymentSelector.innerHTML = '<option value="">Selecione pagamento</option>' + 
-            paymentList.map(p => `<option value="${p.id}">${p.nome || 'Anônimo'} - R$ ${p.valor.toFixed(2)}</option>`).join('');
+  const action = event.target.closest('[data-act]');
+  if (action) {
+    const { act, id } = action.dataset;
+    if (act === 'inc') changeQty(id, 1);
+    if (act === 'dec') changeQty(id, -1);
+    if (act === 'remove') removeItem(id);
+  }
+});
+
+bagBtn.addEventListener('click', openCart);
+drawerClose.addEventListener('click', closeCart);
+overlay.addEventListener('click', closeCart);
+clearBtn.addEventListener('click', () => {
+  cart = {};
+  saveCart();
+  renderCart();
+  toastMessage('Sacola esvaziada');
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== 'Escape') return;
+  if (drawer.classList.contains('is-open')) closeCart();
+  if (mobileMenu.classList.contains('is-open')) toggleMenu(false);
+});
+
+/* --------------------------------------------------------------------------
+   Filtros da coleção
+   -------------------------------------------------------------------------- */
+
+const filterButtons = document.querySelectorAll('.filter');
+const productCards = document.querySelectorAll('.product');
+
+filterButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    filterButtons.forEach((item) => item.classList.remove('is-active'));
+    button.classList.add('is-active');
+
+    const filter = button.dataset.filter;
+    productCards.forEach((card) => {
+      const show = filter === 'todos' || card.dataset.category === filter;
+      card.classList.toggle('is-hidden', !show);
     });
+  });
+});
+
+/* --------------------------------------------------------------------------
+   Menu mobile
+   -------------------------------------------------------------------------- */
+
+function toggleMenu(force) {
+  const open = typeof force === 'boolean' ? force : !mobileMenu.classList.contains('is-open');
+  mobileMenu.classList.toggle('is-open', open);
+  mobileMenu.setAttribute('aria-hidden', String(!open));
+  menuBtn.setAttribute('aria-expanded', String(open));
+  menuBtn.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+  menuBtn.querySelector('use').setAttribute('href', open ? '#i-close' : '#i-menu');
+  document.body.classList.toggle('no-scroll', open || drawer.classList.contains('is-open'));
 }
 
-confirmPaymentBtn.addEventListener('click', async () => {
-    if (!isAdmin) { alert('Acesso negado'); return; }
-    const paymentId = paymentSelector.value;
-    if (!paymentId) { alert('Selecione um pagamento'); return; }
-    
-    try {
-        await paymentsRef.child(paymentId).update({ status: 'confirmado' });
-        showToast('Pagamento confirmado!');
-    } catch (error) {
-        showToast('Erro: ' + error.message);
-    }
+menuBtn.addEventListener('click', () => toggleMenu());
+mobileMenu.querySelectorAll('a').forEach((link) => {
+  link.addEventListener('click', () => toggleMenu(false));
 });
 
-rejectPaymentBtn.addEventListener('click', async () => {
-    if (!isAdmin) { alert('Acesso negado'); return; }
-    const paymentId = paymentSelector.value;
-    if (!paymentId) { alert('Selecione um pagamento'); return; }
-    
-    try {
-        await paymentsRef.child(paymentId).update({ status: 'rejeitado' });
-        showToast('Pagamento rejeitado');
-    } catch (error) {
-        showToast('Erro: ' + error.message);
-    }
-});
+/* --------------------------------------------------------------------------
+   Header ao rolar
+   -------------------------------------------------------------------------- */
 
-// ========== CALCULATE TOTAL PRIZE ==========
-paymentsRef.orderByChild('status').equalTo('confirmado').on('value', snapshot => {
-    const payments = snapshot.val();
-    if (payments) {
-        totalPrize = Object.values(payments).reduce((sum, p) => sum + (p.valor || 0), 0);
-        totalPrizeEl.textContent = `R$ ${totalPrize.toFixed(2)}`;
-    } else {
-        totalPrize = 0;
-        totalPrizeEl.textContent = 'R$ 0,00';
-    }
-});
-
-// ========== LOAD PENDING PAYMENTS FOR ADMIN ==========
-loadPendingPayments();
-
-// ========== TOAST ==========
-function showToast(msg) {
-    const old = document.querySelector('.toast');
-    if (old) old.remove();
-    const div = document.createElement('div');
-    div.className = 'toast';
-    div.textContent = msg;
-    document.body.appendChild(div);
-    setTimeout(() => div.remove(), 3000);
+function onScroll() {
+  header.classList.toggle('is-scrolled', window.scrollY > 12);
 }
 
-console.log('⚡ Bolão da Ennes carregado!');
-console.log('Sistema de pagamento: Pix estático + confirmação manual');
-console.log('Para tornar um usuário admin: db.ref("usuarios/"+uid).update({admin: true})');
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+/* --------------------------------------------------------------------------
+   Animações de entrada
+   -------------------------------------------------------------------------- */
+
+const revealTargets = document.querySelectorAll('.reveal');
+
+if ('IntersectionObserver' in window) {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('in');
+        observer.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }
+  );
+
+  revealTargets.forEach((target) => observer.observe(target));
+} else {
+  revealTargets.forEach((target) => target.classList.add('in'));
+}
+
+/* --------------------------------------------------------------------------
+   Inicialização
+   -------------------------------------------------------------------------- */
+
+document.getElementById('year').textContent = new Date().getFullYear();
+renderCart();

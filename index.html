@@ -1,176 +1,442 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bolão da Ennes ⚽</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Delicatta Cristã · Roupas delicadas com propósito</title>
+  <meta name="description" content="Delicatta Cristã: roupas delicadas em tons de linho, tricô e cetim. Peças leves e atemporais, feitas em pequena produção, com envio para todo o Brasil." />
+  <meta name="theme-color" content="#FBF8F3" />
+  <meta property="og:title" content="Delicatta Cristã · Roupas delicadas com propósito" />
+  <meta property="og:description" content="Peças leves, tons de linho e caimento suave para vestir a fé em cada detalhe." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/peca-mes.jpg" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F4ECE1'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='36' text-anchor='middle' fill='%233A3229'%3ED%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div id="app">
-        <!-- Header -->
-        <header class="header">
-            <div class="logo">
-                <i class="fas fa-futbol"></i>
-                <h1>Bolão da Ennes</h1>
-            </div>
-            <div class="user-area">
-                <span id="userDisplay"><i class="fas fa-user-circle"></i> Convidado</span>
-                <button id="authBtn" class="btn"><i class="fas fa-sign-in-alt"></i> Entrar</button>
-                <button id="adminToggleBtn" class="btn btn-admin hide"><i class="fas fa-user-cog"></i> ADM</button>
-            </div>
-        </header>
+  <svg class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 8h12l1 12H5L6 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
+    <symbol id="i-whats" viewBox="0 0 24 24"><path d="M20.6 11.7a8.6 8.6 0 0 1-12.7 7.6l-4.4 1.2 1.2-4.3A8.6 8.6 0 1 1 20.6 11.7Z"/><path d="M8.9 8.4c.3-.1.7 0 .9.3l.7 1.3c.1.3.1.6-.1.8l-.5.5c.5 1 1.3 1.8 2.3 2.3l.5-.5c.2-.2.5-.2.8-.1l1.3.7c.3.2.4.5.3.9-.2.6-.8 1.1-1.5 1.1-2.7 0-4.9-2.2-4.9-4.9 0-.7.5-1.3 1.1-1.5Z"/></symbol>
+    <symbol id="i-insta" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.9" cy="7.1" r=".9"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 7h10v9H3zM13 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M6 18c0-7 5-12 13-12 0 8-5 13-13 12Z"/><path d="M6 18c2-4 5-7 9-9"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.1A4 4 0 0 1 12 8a4 4 0 0 1 7 2.9C19 15.6 12 20 12 20Z"/></symbol>
+  </svg>
 
-        <!-- Dashboard Stats -->
-        <section class="stats-grid">
-            <div class="stat-card">
-                <i class="fas fa-trophy"></i>
-                <div>
-                    <h3 id="totalGames">0</h3>
-                    <span>Total de Jogos</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-calendar-check"></i>
-                <div>
-                    <h3 id="finishedGames">0</h3>
-                    <span>Jogos Finalizados</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-users"></i>
-                <div>
-                    <h3 id="totalUsers">0</h3>
-                    <span>Participantes</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-coins"></i>
-                <div>
-                    <h3 id="totalPrize">R$ 0,00</h3>
-                    <span>Prêmio Total</span>
-                </div>
-            </div>
-        </section>
+  <a class="skip" href="#colecao">Ir para a coleção</a>
 
-        <!-- Próximos jogos -->
-        <section class="card">
-            <h2><i class="fas fa-calendar-alt"></i> Jogos Futuros</h2>
-            <div id="futureGames" class="games-grid"></div>
-        </section>
+  <div class="announce">
+    <p>Frete grátis acima de R$ 299 · Enviamos para todo o Brasil</p>
+  </div>
 
-        <!-- Todos os jogos -->
-        <section class="card">
-            <h2><i class="fas fa-trophy"></i> Resultados & Jogos</h2>
-            <div id="allGames" class="games-grid"></div>
-        </section>
+  <header class="header" id="header">
+    <div class="header__inner">
+      <a class="brand" href="#topo" aria-label="Delicatta Cristã, página inicial">
+        <span class="brand__mark">D</span>
+        <span class="brand__text">
+          <span class="brand__name">Delicatta</span>
+          <span class="brand__sub">Cristã</span>
+        </span>
+      </a>
 
-        <!-- Painel Admin -->
-        <section id="adminPanel" class="card admin-panel hide">
-            <h2><i class="fas fa-shield-alt"></i> Painel Administrativo</h2>
-            
-            <div class="admin-section">
-                <h3><i class="fas fa-plus-circle"></i> Adicionar Jogo</h3>
-                <div class="row">
-                    <input type="text" id="team1Input" placeholder="Time 1 (ex: Brasil)">
-                    <input type="text" id="team2Input" placeholder="Time 2 (ex: Argentina)">
-                    <input type="text" id="flag1Input" placeholder="🇧🇷 emoji bandeira">
-                    <input type="text" id="flag2Input" placeholder="🇦🇷 emoji bandeira">
-                    <input type="date" id="gameDateInput">
-                    <button id="addGameBtn" class="btn-success"><i class="fas fa-plus-circle"></i> Adicionar</button>
-                </div>
-            </div>
+      <nav class="nav" aria-label="Navegação principal">
+        <a href="#colecao">Coleção</a>
+        <a href="#essencia">Nossa essência</a>
+        <a href="#depoimentos">Depoimentos</a>
+        <a href="#duvidas">Dúvidas</a>
+      </nav>
 
-            <div class="admin-section">
-                <h3><i class="fas fa-edit"></i> Atualizar Placar</h3>
-                <div class="row">
-                    <select id="gameSelector"><option value="">Selecione jogo</option></select>
-                    <input type="number" id="score1Update" placeholder="Gols time 1">
-                    <input type="number" id="score2Update" placeholder="Gols time 2">
-                    <button id="updateScoreBtn" class="btn-warning"><i class="fas fa-check"></i> Atualizar</button>
-                    <button id="deleteGameBtn" class="btn-danger"><i class="fas fa-trash"></i> Remover</button>
-                </div>
-            </div>
-
-            <div class="admin-section">
-                <h3><i class="fas fa-crown"></i> Gerenciar Admin</h3>
-                <div class="row">
-                    <input type="email" id="adminEmailInput" placeholder="Email do usuário">
-                    <button id="makeAdminBtn" class="btn-admin"><i class="fas fa-user-shield"></i> Tornar Admin</button>
-                </div>
-            </div>
-
-            <div class="admin-section">
-                <h3><i class="fas fa-check-circle"></i> Confirmar Pagamento</h3>
-                <div class="row">
-                    <select id="paymentSelector"><option value="">Selecione pagamento</option></select>
-                    <button id="confirmPaymentBtn" class="btn-success"><i class="fas fa-check"></i> Confirmar</button>
-                    <button id="rejectPaymentBtn" class="btn-danger"><i class="fas fa-times"></i> Rejeitar</button>
-                </div>
-            </div>
-
-            <button id="toggleAdminMode" class="btn btn-outline"><i class="fas fa-eye-slash"></i> Fechar Painel</button>
-        </section>
-
-        <!-- Pagamento -->
-        <section class="card payment-section">
-            <h2><i class="fas fa-hand-holding-usd"></i> Contribua com o Bolão</h2>
-            <p style="opacity:0.8; margin-bottom:15px;">Ajude a manter o bolão! Sua contribuição aumenta o prêmio final.</p>
-            
-            <div class="payment-info">
-                <div class="pix-info">
-                    <i class="fas fa-qrcode" style="font-size:2rem; color:#f5c842;"></i>
-                    <div>
-                        <h3>Pague via Pix</h3>
-                        <p style="opacity:0.7; font-size:0.9rem;">Use o código abaixo ou escaneie o QR Code</p>
-                    </div>
-                </div>
-                <div class="pix-code-box">
-                    <div class="pix-code-display">
-                        <span id="pixCodeDisplay">00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540BR5913Bolao Ennes6009Sao Paulo62070503***6304E2F3</span>
-                        <button id="copyPixBtn" class="btn"><i class="fas fa-copy"></i> Copiar</button>
-                    </div>
-                    <div class="pix-qr-container">
-                        <img id="pixQrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=00020126360014BR.GOV.BCB.PIX0114%2B5511999999999520400005303986540BR5913Bolao%20Ennes6009Sao%20Paulo62070503***6304E2F3" alt="QR Code Pix" style="width:150px; height:150px;">
-                        <p style="font-size:0.8rem; opacity:0.6; margin-top:8px;">Chave Pix: bolao@ennes.com</p>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top:20px; border-top:1px solid #1f3750; padding-top:20px;">
-                <h3 style="margin-bottom:15px;">Informe seu pagamento</h3>
-                <div class="row">
-                    <input type="text" id="paymentName" placeholder="Seu nome completo" style="flex:2;">
-                    <input type="text" id="paymentValue" placeholder="Valor (ex: 10)" style="flex:1;">
-                    <input type="text" id="paymentKey" placeholder="Chave Pix ou comprovante" style="flex:2;">
-                    <button id="registerPaymentBtn" class="btn-payment"><i class="fas fa-paper-plane"></i> Registrar Pagamento</button>
-                </div>
-                <div id="userPayments" style="margin-top:15px;"></div>
-            </div>
-        </section>
-
-        <div class="footer">⚡ Bolão da Ennes • Pagamento via Pix (sem necessidade de conta em bancos)</div>
+      <div class="header__actions">
+        <a class="header__link" href="#duvidas">Atendimento</a>
+        <button class="bag-btn" id="bagBtn" type="button" aria-label="Abrir sacola">
+          <svg class="icon"><use href="#i-bag"/></svg>
+          <span>Sacola</span>
+          <span class="bag-btn__count" id="bagCount" aria-live="polite">0</span>
+        </button>
+        <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileMenu">
+          <svg class="icon"><use href="#i-menu"/></svg>
+        </button>
+      </div>
     </div>
+  </header>
 
-    <!-- Modal de Login/Cadastro -->
-    <div id="authModal" class="modal hide">
-        <div class="modal-content">
-            <h2 id="modalTitle">Entrar</h2>
-            <input type="email" id="emailInput" placeholder="Email">
-            <input type="password" id="passwordInput" placeholder="Senha">
-            <div id="authError" style="color:#e74c3c; font-size:0.9rem; margin:8px 0;"></div>
-            <button id="submitAuthBtn" class="btn btn-success"><i class="fas fa-sign-in-alt"></i> Entrar</button>
-            <span class="toggle-link" id="toggleAuthMode">Criar conta</span>
-            <button id="closeModalBtn" class="btn btn-outline" style="margin-top:8px;">Fechar</button>
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <a href="#colecao">Coleção</a>
+    <a href="#essencia">Nossa essência</a>
+    <a href="#depoimentos">Depoimentos</a>
+    <a href="#duvidas">Dúvidas</a>
+    <a class="mobile-menu__cta" href="https://wa.me/5511999999999" target="_blank" rel="noopener">Falar no WhatsApp</a>
+  </div>
+
+  <main id="topo">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero__text reveal">
+        <p class="eyebrow">Nova coleção · 2026</p>
+        <h1>Delicadeza<br /><em>que veste a fé</em></h1>
+        <p class="hero__lead">
+          Peças leves, tons de linho e caimento suave — para acompanhar você no dia a dia,
+          no culto e nos momentos que merecem cuidado.
+        </p>
+        <div class="hero__actions">
+          <a class="btn btn--dark" href="#colecao">
+            Ver coleção
+            <svg class="icon"><use href="#i-arrow"/></svg>
+          </a>
+          <a class="btn btn--ghost" href="https://wa.me/5511999999999" target="_blank" rel="noopener">
+            <svg class="icon"><use href="#i-whats"/></svg>
+            Falar no WhatsApp
+          </a>
         </div>
-    </div>
+        <ul class="hero__notes">
+          <li><svg class="icon"><use href="#i-check"/></svg> Frete grátis acima de R$ 299</li>
+          <li><svg class="icon"><use href="#i-check"/></svg> Troca em até 7 dias</li>
+        </ul>
+      </div>
 
-    <script src="script.js"></script>
+      <div class="hero__media reveal">
+        <figure class="arch">
+          <img src="assets/hero.jpg" alt="Mulher vestindo conjunto de linho cru com caimento leve" width="1100" height="1375" fetchpriority="high" />
+        </figure>
+        <div class="hero__card">
+          <p class="hero__card-quote">“A força e a dignidade são os seus vestidos.”</p>
+          <p class="hero__card-ref">Provérbios 31:25</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Versículo -->
+    <section class="verse" aria-label="Versículo">
+      <p class="verse__text">Vestir-se bem é um gesto de cuidado com quem você é por dentro.</p>
+      <p class="verse__ref">Delicatta Cristã</p>
+    </section>
+
+    <!-- Coleção -->
+    <section class="section" id="colecao">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow">A coleção</p>
+          <h2 class="section__title">Peças para o dia a dia</h2>
+          <p class="section__lead">Tecidos naturais, modelagem delicada e tons que combinam entre si.</p>
+        </div>
+        <div class="filters" role="group" aria-label="Filtrar por categoria">
+          <button class="filter is-active" data-filter="todos" type="button">Todas</button>
+          <button class="filter" data-filter="vestidos" type="button">Vestidos</button>
+          <button class="filter" data-filter="trico" type="button">Tricô</button>
+          <button class="filter" data-filter="blusas" type="button">Blusas</button>
+        </div>
+      </div>
+
+      <div class="products" id="products">
+        <article class="product" data-id="vestido-aurora" data-name="Vestido Aurora" data-price="289" data-image="assets/vestido-aurora.jpg" data-category="vestidos">
+          <div class="product__media">
+            <img src="assets/vestido-aurora.jpg" alt="Vestido Aurora bege de um ombro só" width="800" height="1067" loading="lazy" />
+            <span class="product__tag">Novo</span>
+            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
+          </div>
+          <div class="product__info">
+            <h3 class="product__name">Vestido Aurora</h3>
+            <p class="product__meta">Crepe leve · bege · P, M e G</p>
+            <p class="product__price">R$ 289,00</p>
+          </div>
+        </article>
+
+        <article class="product" data-id="vestido-linho" data-name="Vestido Linho Clássico" data-price="329" data-image="assets/vestido-linho.jpg" data-category="vestidos">
+          <div class="product__media">
+            <img src="assets/vestido-linho.jpg" alt="Vestido longo de linho cru com mangas bufantes" width="800" height="1067" loading="lazy" />
+            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
+          </div>
+          <div class="product__info">
+            <h3 class="product__name">Vestido Linho Clássico</h3>
+            <p class="product__meta">Linho · areia · P, M e G</p>
+            <p class="product__price">R$ 329,00</p>
+          </div>
+        </article>
+
+        <article class="product" data-id="vestido-cetim" data-name="Vestido Cetim Nuvem" data-price="379" data-image="assets/vestido-cetim.jpg" data-category="vestidos">
+          <div class="product__media">
+            <img src="assets/vestido-cetim.jpg" alt="Vestido de cetim marfim com casaco camel" width="800" height="1067" loading="lazy" />
+            <span class="product__tag">Mais vendido</span>
+            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
+          </div>
+          <div class="product__info">
+            <h3 class="product__name">Vestido Cetim Nuvem</h3>
+            <p class="product__meta">Cetim · marfim · P, M e G</p>
+            <p class="product__price">R$ 379,00</p>
+          </div>
+        </article>
+
+        <article class="product" data-id="cardiga-bosque" data-name="Cardigã Bosque" data-price="249" data-image="assets/cardiga-bosque.jpg" data-category="trico">
+          <div class="product__media">
+            <img src="assets/cardiga-bosque.jpg" alt="Cardigã de tricô creme com laço de fita" width="800" height="1067" loading="lazy" />
+            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
+          </div>
+          <div class="product__info">
+            <h3 class="product__name">Cardigã Bosque</h3>
+            <p class="product__meta">Tricô · creme · único</p>
+            <p class="product__price">R$ 249,00</p>
+          </div>
+        </article>
+
+        <article class="product" data-id="sueter-aconchego" data-name="Suéter Aconchego" data-price="219" data-image="assets/sueter-aconchego.jpg" data-category="trico">
+          <div class="product__media">
+            <img src="assets/sueter-aconchego.jpg" alt="Suéter de tricô mescla areia de gola alta" width="800" height="1067" loading="lazy" />
+            <span class="product__tag">Últimas peças</span>
+            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
+          </div>
+          <div class="product__info">
+            <h3 class="product__name">Suéter Aconchego</h3>
+            <p class="product__meta">Tricô mescla · areia · P e M</p>
+            <p class="product__price">R$ 219,00</p>
+          </div>
+        </article>
+
+        <article class="product" data-id="blusa-seda" data-name="Blusa Seda Marfim" data-price="189" data-image="assets/blusa-seda.jpg" data-category="blusas">
+          <div class="product__media">
+            <img src="assets/blusa-seda.jpg" alt="Detalhe de blusa de seda marfim com alças finas" width="800" height="1067" loading="lazy" />
+            <button class="product__add" type="button" data-add>Adicionar à sacola</button>
+          </div>
+          <div class="product__info">
+            <h3 class="product__name">Blusa Seda Marfim</h3>
+            <p class="product__meta">Seda · marfim · P, M e G</p>
+            <p class="product__price">R$ 189,00</p>
+          </div>
+        </article>
+      </div>
+
+      <p class="products__note">
+        Não achou seu tamanho? <a href="https://wa.me/5511999999999" target="_blank" rel="noopener">Fale com a gente</a> — trabalhamos com encomendas.
+      </p>
+    </section>
+
+    <!-- Peça do mês -->
+    <section class="section section--sand spotlight">
+      <div class="spotlight__media reveal">
+        <img src="assets/peca-mes.jpg" alt="Vestido de cetim marfim com casaco de lã camel, em luz natural" width="1000" height="1500" loading="lazy" />
+      </div>
+      <div class="spotlight__text reveal">
+        <p class="eyebrow">Peça do mês</p>
+        <h2 class="section__title">Vestido Cetim Nuvem</h2>
+        <p>
+          O cair da seda, o brilho discreto e a alça fina: uma peça que resolve o almoço de domingo
+          e o casamento à noite. Escolhida à mão para quem gosta de elegância sem esforço.
+        </p>
+        <ul class="ticks">
+          <li><svg class="icon"><use href="#i-check"/></svg> Cetim com forro, não marca</li>
+          <li><svg class="icon"><use href="#i-check"/></svg> Modelagem reta, do 36 ao 44</li>
+          <li><svg class="icon"><use href="#i-check"/></svg> Combina com o casaco Bosque</li>
+        </ul>
+        <div class="spotlight__buy">
+          <span class="spotlight__price">R$ 379,00</span>
+          <button class="btn btn--dark" type="button" data-add data-id="vestido-cetim" data-name="Vestido Cetim Nuvem" data-price="379" data-image="assets/vestido-cetim.jpg">
+            Quero essa peça
+            <svg class="icon"><use href="#i-arrow"/></svg>
+          </button>
+        </div>
+        <p class="spotlight__note">Parcelamos em até 3x sem juros · Pix com 5% de desconto</p>
+      </div>
+    </section>
+
+    <!-- Essência -->
+    <section class="section essence" id="essencia">
+      <div class="essence__text reveal">
+        <p class="eyebrow">Nossa essência</p>
+        <h2 class="section__title">Uma marca feita com calma</h2>
+        <p>
+          A Delicatta nasceu de um desejo simples: vestir a mulher cristã com delicadeza.
+          Sem excessos, sem pressa — escolhendo tecidos que respiram, modelagens que respeitam
+          o corpo e tons que atravessam estações.
+        </p>
+        <p>
+          Cada peça é comprada em pequena quantidade, conferida uma a uma e embalada à mão,
+          com um cartão escrito por nós. Acreditamos que o cuidado com o detalhe também é uma
+          forma de servir.
+        </p>
+        <div class="pillars">
+          <div class="pillar">
+            <svg class="icon"><use href="#i-leaf"/></svg>
+            <h3>Tecidos naturais</h3>
+            <p>Linho, algodão e tricô de toque macio, escolhidos pelo caimento.</p>
+          </div>
+          <div class="pillar">
+            <svg class="icon"><use href="#i-heart"/></svg>
+            <h3>Modelagem delicada</h3>
+            <p>Peças atemporais, que servem para o dia a dia e para o culto.</p>
+          </div>
+          <div class="pillar">
+            <svg class="icon"><use href="#i-truck"/></svg>
+            <h3>Envio cuidadoso</h3>
+            <p>Embalagem protegida, postagem em até 2 dias úteis.</p>
+          </div>
+        </div>
+      </div>
+      <div class="essence__media reveal">
+        <img src="assets/loja.jpg" alt="Arara de madeira com roupas em tons neutros na loja" width="900" height="600" loading="lazy" />
+        <div class="essence__sign">
+          <p>Com carinho,</p>
+          <span>Equipe Delicatta</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Depoimentos -->
+    <section class="section section--sand" id="depoimentos">
+      <div class="section__head section__head--center">
+        <div>
+          <p class="eyebrow">Quem veste, conta</p>
+          <h2 class="section__title">Delicadeza que chega junto</h2>
+        </div>
+      </div>
+      <div class="quotes">
+        <figure class="quote">
+          <div class="quote__stars" aria-label="5 de 5 estrelas">★★★★★</div>
+          <blockquote>Recebi o vestido de linho e chorei. O tecido é leve, o caimento é perfeito e veio com um cartãozinho escrito à mão.</blockquote>
+          <figcaption>Ana Clara · São Paulo</figcaption>
+        </figure>
+        <figure class="quote">
+          <div class="quote__stars" aria-label="5 de 5 estrelas">★★★★★</div>
+          <blockquote>Comprei o suéter para usar no culto e virou o meu favorito. É quentinho sem ser pesado, e o tom combina com tudo.</blockquote>
+          <figcaption>Rebeca M. · Belo Horizonte</figcaption>
+        </figure>
+        <figure class="quote">
+          <div class="quote__stars" aria-label="5 de 5 estrelas">★★★★★</div>
+          <blockquote>Atendimento humano de verdade. Me ajudaram a escolher o tamanho pelo WhatsApp e a peça chegou em três dias.</blockquote>
+          <figcaption>Juliana P. · Curitiba</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Dúvidas -->
+    <section class="section faq" id="duvidas">
+      <div class="faq__intro">
+        <p class="eyebrow">Dúvidas</p>
+        <h2 class="section__title">Antes de escolher</h2>
+        <p class="section__lead">Se ficar qualquer dúvida, é só chamar no WhatsApp — respondemos no mesmo dia.</p>
+        <a class="btn btn--ghost" href="https://wa.me/5511999999999" target="_blank" rel="noopener">
+          <svg class="icon"><use href="#i-whats"/></svg>
+          Falar com a Delicatta
+        </a>
+      </div>
+      <div class="faq__list">
+        <details>
+          <summary>Como faço o pedido?</summary>
+          <p>Monte sua sacola aqui no site e finalize no WhatsApp: a mensagem já vai com as peças escolhidas e o total. Confirmamos disponibilidade, tamanho e frete com você.</p>
+        </details>
+        <details>
+          <summary>Quais são as formas de pagamento?</summary>
+          <p>Pix (com 5% de desconto) e cartão de crédito em até 3x sem juros. O pagamento é combinado diretamente pelo WhatsApp, com comprovante.</p>
+        </details>
+        <details>
+          <summary>Qual é o prazo de envio?</summary>
+          <p>Postamos em até 2 dias úteis após a confirmação do pagamento. O prazo de entrega depende da sua região — enviamos pelo Correios ou transportadora, com código de rastreio.</p>
+        </details>
+        <details>
+          <summary>E se o tamanho não servir?</summary>
+          <p>Você tem 7 dias para solicitar a troca. A peça deve estar sem uso, com a etiqueta. Cuidamos dos detalhes da troca com você pelo WhatsApp.</p>
+        </details>
+        <details>
+          <summary>As peças são feitas à mão?</summary>
+          <p>Trabalhamos com pequena produção e peças de costura artesanal. Por isso, alguns modelos têm quantidade limitada e pequenas variações de tom — o que torna cada peça única.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <p class="eyebrow">Vamos escolher juntas?</p>
+      <h2>Uma peça nova,<br /><em>um cuidado a mais</em></h2>
+      <p class="cta__lead">Nos conte a ocasião e o seu tamanho. A gente monta uma seleção pensando em você.</p>
+      <div class="cta__actions">
+        <a class="btn btn--dark" href="https://wa.me/5511999999999" target="_blank" rel="noopener">
+          <svg class="icon"><use href="#i-whats"/></svg>
+          Chamar no WhatsApp
+        </a>
+        <a class="btn btn--ghost" href="https://instagram.com/delicattacrista" target="_blank" rel="noopener">
+          <svg class="icon"><use href="#i-insta"/></svg>
+          Ver no Instagram
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <a class="brand" href="#topo">
+          <span class="brand__mark">D</span>
+          <span class="brand__text">
+            <span class="brand__name">Delicatta</span>
+            <span class="brand__sub">Cristã</span>
+          </span>
+        </a>
+        <p>Roupas delicadas, feitas em pequena produção, para vestir a fé em cada detalhe.</p>
+      </div>
+      <div class="footer__col">
+        <h3>Coleção</h3>
+        <a href="#colecao">Vestidos</a>
+        <a href="#colecao">Tricô</a>
+        <a href="#colecao">Blusas</a>
+        <a href="#colecao">Novidades</a>
+      </div>
+      <div class="footer__col">
+        <h3>Atendimento</h3>
+        <a href="#duvidas">Trocas e devoluções</a>
+        <a href="#duvidas">Guia de tamanhos</a>
+        <a href="#duvidas">Prazos de envio</a>
+        <a href="https://wa.me/5511999999999" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+      <div class="footer__col">
+        <h3>Redes</h3>
+        <a href="https://instagram.com/delicattacrista" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://wa.me/5511999999999" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="mailto:contato@delicatta.com.br">contato@delicatta.com.br</a>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p>© <span id="year">2026</span> Delicatta Cristã · CNPJ 00.000.000/0001-00</p>
+      <p>Fotos ilustrativas · Pexels</p>
+    </div>
+  </footer>
+
+  <!-- Sacola -->
+  <div class="overlay" id="overlay" hidden></div>
+  <aside class="drawer" id="drawer" aria-label="Sacola de compras" aria-hidden="true">
+    <div class="drawer__head">
+      <h2>Sua sacola</h2>
+      <button class="icon-btn" id="drawerClose" type="button" aria-label="Fechar sacola">
+        <svg class="icon"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="drawer__body" id="drawerBody"></div>
+    <div class="drawer__foot" id="drawerFoot" hidden>
+      <div class="drawer__row">
+        <span>Total</span>
+        <strong id="drawerTotal">R$ 0,00</strong>
+      </div>
+      <p class="drawer__note">Frete grátis acima de R$ 299 · Pix com 5% de desconto</p>
+      <a class="btn btn--dark btn--full" id="checkoutBtn" href="https://wa.me/5511999999999" target="_blank" rel="noopener">
+        <svg class="icon"><use href="#i-whats"/></svg>
+        Finalizar no WhatsApp
+      </a>
+      <button class="link-btn" id="clearBtn" type="button">Limpar sacola</button>
+    </div>
+  </aside>
+
+  <a class="float-wa" href="https://wa.me/5511999999999" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
+    <svg class="icon"><use href="#i-whats"/></svg>
+  </a>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
 </body>
 </html>
