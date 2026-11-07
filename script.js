@@ -23,12 +23,12 @@ let products = [];
 const catalog = new Map();
 let cart = {};
 
-async function loadCatalog() {
-  const response = await fetch('produtos.json', { cache: 'no-store' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const data = await response.json();
+const CLOUD = window.DELICATTA || {};
+const DB_URL = CLOUD.databaseURL || '';
+const CATALOG_PATH = CLOUD.catalogPath || 'catalogo';
 
-  const produtos = Array.isArray(data.produtos)
+function normalizeCatalog(data) {
+  const produtos = Array.isArray(data && data.produtos)
     ? data.produtos
         .filter((item) => item && item.id && item.nome && Number(item.preco) > 0)
         .map((item) => ({
@@ -43,7 +43,31 @@ async function loadCatalog() {
         }))
     : [];
 
-  return { aviso: typeof data.aviso === 'string' ? data.aviso : '', produtos };
+  return { aviso: typeof (data && data.aviso) === 'string' ? data.aviso : '', produtos };
+}
+
+/* O catálogo publicado pelo painel fica no Firebase. Se o banco estiver vazio
+   ou inacessível, o site usa o produtos.json do repositório. */
+async function fetchCloudCatalog() {
+  if (!DB_URL) return null;
+  try {
+    const response = await fetch(`${DB_URL}/${CATALOG_PATH}.json`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    return data && Array.isArray(data.produtos) ? data : null;
+  } catch (error) {
+    console.warn('Catálogo do Firebase indisponível, usando produtos.json:', error);
+    return null;
+  }
+}
+
+async function loadCatalog() {
+  const cloud = await fetchCloudCatalog();
+  if (cloud) return normalizeCatalog(cloud);
+
+  const response = await fetch('produtos.json', { cache: 'no-store' });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return normalizeCatalog(await response.json());
 }
 
 /* --------------------------------------------------------------------------

@@ -99,7 +99,12 @@
           <label class="field field--wide">
             <span class="field__label">Imagem *</span>
             <input id="f-imagem" type="text" required placeholder="assets/nova-peca.jpg ou https://..." />
-            <span class="field__help">Envie a foto para a pasta <code>assets</code> do site e use o caminho dela, ou cole um link completo.</span>
+            <span class="field__help">Envie a foto do computador (vai direto para o ImgBB) ou cole um link completo.</span>
+            <div class="upload">
+              <button class="btn btn--ghost btn--sm" id="btnUpload" type="button">Enviar foto do computador</button>
+              <span class="upload__status" id="uploadStatus"></span>
+              <input id="f-file" type="file" accept="image/*" hidden />
+            </div>
           </label>
 
           <div class="field field--wide preview">
@@ -128,29 +133,30 @@
     <section class="card">
       <h2 class="card__title">Publicar no site</h2>
       <p class="card__hint">
-        O painel guarda as alterações neste navegador. Para valer para todas as visitantes, o catálogo
-        precisa ser enviado ao repositório:
+        Publicar grava o catálogo no Firebase — o site passa a mostrar as alterações na hora, para
+        todas as visitantes, sem enviar arquivo nenhum.
       </p>
-      <ol class="steps">
-        <li>Clique em <strong>Baixar produtos.json</strong>.</li>
-        <li>No GitHub, substitua o <code>produtos.json</code> da raiz do repositório pelo arquivo baixado.</li>
-        <li>Em cerca de um minuto o site publica a atualização.</li>
-      </ol>
       <div class="publish">
-        <button class="btn btn--dark" id="btnExportar" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M8 11l4 4 4-4M5 19h14"/></svg>
-          Baixar produtos.json
+        <button class="btn btn--dark" id="btnPublicar" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6M5 21h14"/></svg>
+          Publicar agora
         </button>
+        <button class="btn btn--ghost" id="btnExportar" type="button">Baixar cópia (produtos.json)</button>
         <button class="btn btn--ghost" id="btnImportar" type="button">Importar JSON</button>
         <button class="btn btn--danger" id="btnDescartar" type="button">Descartar alterações</button>
         <input id="fileImport" type="file" accept="application/json,.json" hidden />
       </div>
-      <p class="hint">Dica: depois de enviar o arquivo, clique em “Descartar alterações” para o painel voltar a espelhar o site publicado.</p>
+      <p class="hint">
+        A cópia em <code>produtos.json</code> é só uma reserva: o site lê o Firebase e recorre ao arquivo
+        apenas se o banco estiver vazio ou fora do ar.
+      </p>
     </section>
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="../config.js"></script>
+  <script src="imgbb-config.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>

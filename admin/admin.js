@@ -2,6 +2,11 @@
 
 const DRAFT_KEY = 'delicatta_admin_draft_v1';
 
+const CLOUD = window.DELICATTA || {};
+const DB_URL = CLOUD.databaseURL || '';
+const CATALOG_PATH = CLOUD.catalogPath || 'catalogo';
+const IMGBB_KEY = window.DELICATTA_IMGBB_KEY || '';
+
 const CATEGORY_LABELS = {
   vestidos: 'Vestidos',
   trico: 'Tricô',
@@ -19,6 +24,9 @@ let server = { aviso: '', produtos: [] };
 let state = { aviso: '', produtos: [] };
 let editingId = null;
 let serverError = false;
+let source = 'arquivo'; // 'nuvem' quando o catálogo veio do Firebase
+let cloudBlocked = false; // banco respondeu 401/403 — regras fechadas
+let cloudEmpty = false; // banco respondeu vazio
 
 /* Elementos --------------------------------------------------------------- */
 
@@ -42,6 +50,10 @@ const els = {
   destaque: document.getElementById('f-destaque'),
   preview: document.getElementById('imagePreview'),
   toast: document.getElementById('toast'),
+  publicar: document.getElementById('btnPublicar'),
+  upload: document.getElementById('btnUpload'),
+  uploadStatus: document.getElementById('uploadStatus'),
+  file: document.getElementById('f-file'),
 };
 
 /* Utilidades -------------------------------------------------------------- */
@@ -145,19 +157,36 @@ function readDraft() {
 
 function updateStatus() {
   const dirty = isDirty();
-  els.status.classList.toggle('is-dirty', dirty && !serverError);
-  els.status.classList.toggle('is-clean', !dirty && !serverError);
-  els.status.classList.toggle('is-error', serverError);
+  const error = serverError || cloudBlocked;
 
-  if (serverError) {
+  els.status.classList.toggle('is-dirty', dirty && !error);
+  els.status.classList.toggle('is-clean', !dirty && !error);
+  els.status.classList.toggle('is-error', error);
+
+  if (cloudBlocked && !dirty) {
     els.statusText.textContent =
-      'Não consegui ler o produtos.json do site. Você pode editar e baixar o arquivo normalmente.';
+      'O Firebase recusou a leitura (regras fechadas). Libere o nó “catalogo” para ler e escrever no console do Firebase.';
     return;
   }
 
-  els.statusText.textContent = dirty
-    ? 'Você tem alterações não publicadas neste navegador.'
-    : 'Tudo certo — o painel mostra o catálogo que está no site.';
+  if (serverError && !dirty) {
+    els.statusText.textContent =
+      'Não consegui ler o catálogo do site. Você pode editar, executar e baixar uma cópia normalmente.';
+    return;
+  }
+
+  if (dirty) {
+    els.statusText.textContent = 'Você tem alterações não publicadas. Clique em “Publicar agora” para levá-las ao site.';
+    return;
+  }
+
+  if (cloudEmpty || source === 'arquivo') {
+    els.statusText.textContent =
+      'O site está usando o produtos.json. Clique em “Publicar agora” para levar o catálogo ao Firebase.';
+    return;
+  }
+
+  els.statusText.textContent = 'Tudo certo — o painel mostra o catálogo publicado no site.';
 }
 
 /* Aviso ------------------------------------------------------------------- */
@@ -316,7 +345,145 @@ function exportJson() {
   link.download = 'produtos.json';
   link.click();
   URL.revokeObjectURL(url);
-  toast('produtos.json baixado — envie para o repositório');
+  toast('Cópia baixada em produtos.json');
+}
+
+/* Nuvem ------------------------------------------------------------------- */
+
+async function loadServer() {
+  if (DB_URL) {
+    try {
+      const response = await fetch(`${DB_URL}/${CATALOG_PATH}.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && Array.isArray(data.produtos)) {
+          source = 'nuvem';
+          return normalize(data);
+        }
+        cloudEmpty = true;
+        source = 'arquivo';
+      } else {
+        cloudBlocked = true;
+        console.warn('Firebase respondeu', response.status, 'na leitura do catálogo');
+      }
+    } catch (error) {
+      console.warn('Firebase inacessível, usando produtos.json:', error);
+    }
+  }
+
+  try {
+    const response = await fetch(`../produtos.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return normalize(await response.json());
+  } catch (error) {
+    serverError = true;
+    console.error('Não foi possível ler produtos.json:', error);
+    return { aviso: '', produtos: [] };
+  }
+}
+
+async function publish() {
+  if (!DB_URL) {
+    toast('Firebase não configurado: preencha databaseURL em config.js');
+    return;
+  }
+
+  if (state.produtos.length === 0 && !confirm('Publicar um catálogo vazio? O site ficará sem peças.')) {
+    return;
+  }
+
+  const button = els.publicar;
+  button.disabled = true;
+  button.classList.add('is-busy');
+
+  try {
+    const response = await fetch(`${DB_URL}/${CATALOG_PATH}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ aviso: state.aviso, produtos: state.produtos }),
+    });
+
+    if (!response.ok) {
+      cloudBlocked = response.status === 401 || response.status === 403;
+      throw new Error(
+        cloudBlocked
+          ? 'O Firebase recusou a escrita: libere o nó “catalogo” para leitura e escrita nas regras do Realtime Database.'
+          : `Firebase respondeu HTTP ${response.status}`
+      );
+    }
+
+    server = clone(state);
+    source = 'nuvem';
+    cloudBlocked = false;
+    cloudEmpty = false;
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {
+      /* ignorado */
+    }
+    toast('Publicado! O site já está mostrando o catálogo novo.');
+  } catch (error) {
+    toast(error.message || 'Não foi possível publicar agora');
+  } finally {
+    button.disabled = false;
+    button.classList.remove('is-busy');
+    updateStatus();
+  }
+}
+
+/* Foto no ImgBB ----------------------------------------------------------- */
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(new Error('Não consegui ler o arquivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadImage(file) {
+  if (!IMGBB_KEY) {
+    els.uploadStatus.textContent = 'Chave do ImgBB ausente em imgbb-config.js';
+    return;
+  }
+
+  if (!file.type.startsWith('image/')) {
+    els.uploadStatus.textContent = 'Escolha um arquivo de imagem';
+    return;
+  }
+
+  if (file.size > 10 * 1024 * 1024) {
+    els.uploadStatus.textContent = 'Imagem muito grande (máximo 10 MB)';
+    return;
+  }
+
+  els.upload.disabled = true;
+  els.uploadStatus.textContent = 'Enviando foto…';
+
+  try {
+    const base64 = await fileToBase64(file);
+    const body = new FormData();
+    body.append('image', base64);
+
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(IMGBB_KEY)}`, {
+      method: 'POST',
+      body,
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result || !result.success) {
+      throw new Error((result && result.error && result.error.message) || 'Falha no upload');
+    }
+
+    els.imagem.value = result.data.display_url || result.data.url;
+    updatePreview();
+    els.uploadStatus.textContent = 'Foto enviada';
+  } catch (error) {
+    els.uploadStatus.textContent = `Não deu para enviar: ${error.message}`;
+  } finally {
+    els.upload.disabled = false;
+  }
 }
 
 function importJson(file) {
@@ -379,6 +546,13 @@ els.imagem.addEventListener('input', updatePreview);
 
 document.getElementById('btnExportar').addEventListener('click', exportJson);
 document.getElementById('btnDescartar').addEventListener('click', discardChanges);
+els.publicar.addEventListener('click', publish);
+
+els.upload.addEventListener('click', () => els.file.click());
+els.file.addEventListener('change', () => {
+  if (els.file.files && els.file.files[0]) uploadImage(els.file.files[0]);
+  els.file.value = '';
+});
 
 const fileInput = document.getElementById('fileImport');
 document.getElementById('btnImportar').addEventListener('click', () => fileInput.click());
@@ -390,15 +564,7 @@ fileInput.addEventListener('change', () => {
 /* Inicialização ----------------------------------------------------------- */
 
 async function init() {
-  try {
-    const response = await fetch(`../produtos.json?t=${Date.now()}`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    server = normalize(await response.json());
-  } catch (error) {
-    serverError = true;
-    server = { aviso: '', produtos: [] };
-    console.error('Não foi possível ler produtos.json:', error);
-  }
+  server = await loadServer();
 
   const draft = readDraft();
   state = draft ? normalize(draft) : clone(server);

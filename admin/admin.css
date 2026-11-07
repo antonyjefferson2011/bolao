@@ -325,6 +325,26 @@ code {
   cursor: not-allowed;
 }
 
+.btn--sm {
+  padding: 8px 14px;
+  font-size: 0.7rem;
+}
+
+/* Upload de foto */
+
+.upload {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.upload__status {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+
 .icon-btn {
   display: grid;
   place-items: center;
