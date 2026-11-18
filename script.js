@@ -1,11 +1,11 @@
 // ============================================================
 // GeoVision 3D — Laboratório de Geometria Espacial
-// Implementação completa com Three.js, MediaPipe e cálculos.
+// Three.js + MediaPipe (via globais window.Hands / window.Camera)
 // ============================================================
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
 // ============================================================
 // 1. DADOS GEOMÉTRICOS E MATEMÁTICOS
@@ -15,14 +15,12 @@ const FIGURES = {
   cube: {
     name: 'Cubo',
     type: 'polyhedron',
-    icon: 'box',
     params: { a: 2 },
     paramDefs: [{ key: 'a', label: 'Aresta', min: 0.5, max: 5, step: 0.1 }],
     properties: (p) => {
       const a = p.a;
       return {
         'Aresta (a)': a.toFixed(2),
-        'Face': 'Quadrado',
         'Faces': 6,
         'Arestas': 12,
         'Vértices': 8,
@@ -44,7 +42,6 @@ const FIGURES = {
   paralelepipedo: {
     name: 'Paralelepípedo',
     type: 'polyhedron',
-    icon: 'box',
     params: { a: 2, b: 1.5, c: 1 },
     paramDefs: [
       { key: 'a', label: 'Comprimento', min: 0.5, max: 5, step: 0.1 },
@@ -80,7 +77,6 @@ const FIGURES = {
   prisma_triangular: {
     name: 'Prisma Triangular',
     type: 'polyhedron',
-    icon: 'triangle',
     params: { a: 2, h: 2 },
     paramDefs: [
       { key: 'a', label: 'Lado da base', min: 0.5, max: 5, step: 0.1 },
@@ -129,7 +125,6 @@ const FIGURES = {
   prisma_hexagonal: {
     name: 'Prisma Hexagonal',
     type: 'polyhedron',
-    icon: 'hexagon',
     params: { a: 1.5, h: 2 },
     paramDefs: [
       { key: 'a', label: 'Lado da base', min: 0.5, max: 4, step: 0.1 },
@@ -167,7 +162,6 @@ const FIGURES = {
   piramide_triangular: {
     name: 'Pirâmide Triangular',
     type: 'polyhedron',
-    icon: 'pyramid',
     params: { a: 2, h: 2.5 },
     paramDefs: [
       { key: 'a', label: 'Lado da base', min: 0.5, max: 5, step: 0.1 },
@@ -198,30 +192,17 @@ const FIGURES = {
       const lateralArea = 3 * (p.a * slantHeight / 2);
       return [
         { label: 'Área da base', formula: '(√3/4)·a²', calc: `(√3/4)·${p.a.toFixed(2)}² = ${baseArea.toFixed(2)}` },
-        { label: 'Apotema da base', formula: 'a/(2√3)', calc: `${p.a.toFixed(2)}/(2√3) = ${apothem.toFixed(2)}` },
         { label: 'Altura da face', formula: '√(h² + m²)', calc: `√(${p.h.toFixed(2)}² + ${apothem.toFixed(2)}²) = ${slantHeight.toFixed(2)}` },
         { label: 'Área lateral', formula: '3·(a·g/2)', calc: `3·(${p.a.toFixed(2)}·${slantHeight.toFixed(2)}/2) = ${lateralArea.toFixed(2)}` },
         { label: 'Volume', formula: 'Ab·h/3', calc: `${baseArea.toFixed(2)}·${p.h.toFixed(2)}/3 = ${(baseArea*p.h/3).toFixed(2)}` },
       ];
     },
-    createGeometry: (p) => {
-      const shape = new THREE.Shape();
-      const a = p.a;
-      const h = Math.sqrt(3) / 2 * a;
-      shape.moveTo(0, h * 2/3);
-      shape.lineTo(-a/2, -h/3);
-      shape.lineTo(a/2, -h/3);
-      shape.closePath();
-      const extrude = new THREE.ExtrudeGeometry(shape, { depth: 0.01, bevelEnabled: false });
-      extrude.center();
-      return new THREE.ConeGeometry(a / Math.sqrt(3), p.h, 3);
-    },
+    createGeometry: (p) => new THREE.ConeGeometry(p.a / Math.sqrt(3), p.h, 3),
     createPlanification: (p) => createPiramideTriangularPlanification(p.a, p.h),
   },
   piramide_quadrangular: {
     name: 'Pirâmide Quadrangular',
     type: 'polyhedron',
-    icon: 'pyramid',
     params: { a: 2, h: 2.5 },
     paramDefs: [
       { key: 'a', label: 'Lado da base', min: 0.5, max: 5, step: 0.1 },
@@ -252,7 +233,6 @@ const FIGURES = {
       const lateralArea = 4 * (p.a * slantHeight / 2);
       return [
         { label: 'Área da base', formula: 'a²', calc: `${p.a.toFixed(2)}² = ${baseArea.toFixed(2)}` },
-        { label: 'Apotema da base', formula: 'a/2', calc: `${p.a.toFixed(2)}/2 = ${apothem.toFixed(2)}` },
         { label: 'Altura da face', formula: '√(h² + m²)', calc: `√(${p.h.toFixed(2)}² + ${apothem.toFixed(2)}²) = ${slantHeight.toFixed(2)}` },
         { label: 'Área lateral', formula: '4·(a·g/2)', calc: `4·(${p.a.toFixed(2)}·${slantHeight.toFixed(2)}/2) = ${lateralArea.toFixed(2)}` },
         { label: 'Volume', formula: 'Ab·h/3', calc: `${baseArea.toFixed(2)}·${p.h.toFixed(2)}/3 = ${(baseArea*p.h/3).toFixed(2)}` },
@@ -264,7 +244,6 @@ const FIGURES = {
   piramide_pentagonal: {
     name: 'Pirâmide Pentagonal',
     type: 'polyhedron',
-    icon: 'pyramid',
     params: { a: 1.5, h: 2.5 },
     paramDefs: [
       { key: 'a', label: 'Lado da base', min: 0.5, max: 4, step: 0.1 },
@@ -295,7 +274,6 @@ const FIGURES = {
       const lateralArea = 5 * (p.a * slantHeight / 2);
       return [
         { label: 'Área da base', formula: '5a²/(4·tan(π/5))', calc: `5·${p.a.toFixed(2)}²/(4·tan(π/5)) = ${baseArea.toFixed(2)}` },
-        { label: 'Apotema da base', formula: 'a/(2·tan(π/5))', calc: `${p.a.toFixed(2)}/(2·tan(π/5)) = ${apothem.toFixed(2)}` },
         { label: 'Altura da face', formula: '√(h² + m²)', calc: `√(${p.h.toFixed(2)}² + ${apothem.toFixed(2)}²) = ${slantHeight.toFixed(2)}` },
         { label: 'Área lateral', formula: '5·(a·g/2)', calc: `5·(${p.a.toFixed(2)}·${slantHeight.toFixed(2)}/2) = ${lateralArea.toFixed(2)}` },
         { label: 'Volume', formula: 'Ab·h/3', calc: `${baseArea.toFixed(2)}·${p.h.toFixed(2)}/3 = ${(baseArea*p.h/3).toFixed(2)}` },
@@ -307,22 +285,18 @@ const FIGURES = {
   tetraedro: {
     name: 'Tetraedro',
     type: 'polyhedron',
-    icon: 'tetrahedron',
     params: { a: 2 },
     paramDefs: [{ key: 'a', label: 'Aresta', min: 0.5, max: 5, step: 0.1 }],
     properties: (p) => {
       const a = p.a;
       const baseArea = (Math.sqrt(3) / 4) * a * a;
-      const height = Math.sqrt(2/3) * a;
       const volume = (a * a * a) / (6 * Math.sqrt(2));
-      const lateralArea = 3 * baseArea;
       return {
         'Aresta (a)': a.toFixed(2),
         'Faces': 4,
         'Arestas': 6,
         'Vértices': 4,
-        'Área da base': baseArea.toFixed(2),
-        'Área lateral': lateralArea.toFixed(2),
+        'Área da face': baseArea.toFixed(2),
         'Área total': (4 * baseArea).toFixed(2),
         'Volume': volume.toFixed(2),
       };
@@ -341,7 +315,6 @@ const FIGURES = {
   octaedro: {
     name: 'Octaedro',
     type: 'polyhedron',
-    icon: 'octahedron',
     params: { a: 2 },
     paramDefs: [{ key: 'a', label: 'Aresta', min: 0.5, max: 5, step: 0.1 }],
     properties: (p) => {
@@ -372,7 +345,6 @@ const FIGURES = {
   esfera: {
     name: 'Esfera',
     type: 'round',
-    icon: 'sphere',
     params: { r: 1.5 },
     paramDefs: [{ key: 'r', label: 'Raio', min: 0.5, max: 4, step: 0.1 }],
     properties: (p) => {
@@ -399,7 +371,6 @@ const FIGURES = {
   cilindro: {
     name: 'Cilindro',
     type: 'round',
-    icon: 'cylinder',
     params: { r: 1.2, h: 2.5 },
     paramDefs: [
       { key: 'r', label: 'Raio', min: 0.5, max: 4, step: 0.1 },
@@ -437,7 +408,6 @@ const FIGURES = {
   cone: {
     name: 'Cone',
     type: 'round',
-    icon: 'cone',
     params: { r: 1.2, h: 2.5 },
     paramDefs: [
       { key: 'r', label: 'Raio', min: 0.5, max: 4, step: 0.1 },
@@ -479,7 +449,6 @@ const FIGURES = {
   tronco_cone: {
     name: 'Tronco de Cone',
     type: 'round',
-    icon: 'frustum',
     params: { r1: 1.5, r2: 0.8, h: 2 },
     paramDefs: [
       { key: 'r1', label: 'Raio maior', min: 0.5, max: 4, step: 0.1 },
@@ -534,8 +503,7 @@ function createCubePlanification(a) {
   const gap = 0.02;
   const positions = [
     [0, 0, 0], [s + gap, 0, 0], [s + gap, s + gap, 0],
-    [-(s + gap), 0, 0], [0, s + gap, 0],
-    [0, -(s + gap), 0],
+    [-(s + gap), 0, 0], [0, s + gap, 0], [0, -(s + gap), 0],
   ];
   const group = new THREE.Group();
   positions.forEach(([x, y, z]) => {
@@ -579,15 +547,10 @@ function createPrismaTriangularPlanification(a, h) {
     shape.closePath();
     return shape;
   };
-  const triGeo = (s) => {
-    const shape = triShape(s);
-    return new THREE.ShapeGeometry(shape);
-  };
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-  const t1 = new THREE.Mesh(triGeo(a), mat);
-  t1.position.set(0, 0, 0);
+  const t1 = new THREE.Mesh(new THREE.ShapeGeometry(triShape(a)), mat);
   group.add(t1);
-  const t2 = new THREE.Mesh(triGeo(a), mat);
+  const t2 = new THREE.Mesh(new THREE.ShapeGeometry(triShape(a)), mat);
   t2.position.set(0, 0, h + gap);
   group.add(t2);
   for (let i = 0; i < 3; i++) {
@@ -606,12 +569,8 @@ function createPrismaHexagonalPlanification(a, h) {
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
   const hexGeo = new THREE.CircleGeometry(a, 6);
-  const h1 = new THREE.Mesh(hexGeo, mat);
-  h1.position.set(0, 0, 0);
-  group.add(h1);
-  const h2 = new THREE.Mesh(hexGeo, mat);
-  h2.position.set(0, 0, h + gap);
-  group.add(h2);
+  const h1 = new THREE.Mesh(hexGeo, mat); h1.position.set(0, 0, 0); group.add(h1);
+  const h2 = new THREE.Mesh(hexGeo, mat); h2.position.set(0, 0, h + gap); group.add(h2);
   for (let i = 0; i < 6; i++) {
     const angle = (i / 6) * Math.PI * 2;
     const apothem = a * Math.sqrt(3) / 2;
@@ -624,11 +583,9 @@ function createPrismaHexagonalPlanification(a, h) {
 }
 
 function createPiramideTriangularPlanification(a, h) {
-  const gap = 0.05;
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-  const baseGeo = new THREE.CircleGeometry(a / Math.sqrt(3), 3);
-  const base = new THREE.Mesh(baseGeo, mat);
+  const base = new THREE.Mesh(new THREE.CircleGeometry(a / Math.sqrt(3), 3), mat);
   base.rotation.x = -Math.PI / 2;
   group.add(base);
   const apothem = a / (2 * Math.sqrt(3));
@@ -636,12 +593,8 @@ function createPiramideTriangularPlanification(a, h) {
   for (let i = 0; i < 3; i++) {
     const angle = (i / 3) * Math.PI * 2 + Math.PI / 2;
     const triShape = new THREE.Shape();
-    triShape.moveTo(0, 0);
-    triShape.lineTo(a, 0);
-    triShape.lineTo(a / 2, slantHeight);
-    triShape.closePath();
-    const triGeo = new THREE.ShapeGeometry(triShape);
-    const triMesh = new THREE.Mesh(triGeo, mat);
+    triShape.moveTo(0, 0); triShape.lineTo(a, 0); triShape.lineTo(a / 2, slantHeight); triShape.closePath();
+    const triMesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape), mat);
     triMesh.position.set(Math.cos(angle) * apothem, 0, Math.sin(angle) * apothem);
     triMesh.rotation.y = -angle;
     group.add(triMesh);
@@ -650,11 +603,9 @@ function createPiramideTriangularPlanification(a, h) {
 }
 
 function createPiramideQuadrangularPlanification(a, h) {
-  const gap = 0.05;
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-  const baseGeo = new THREE.PlaneGeometry(a, a);
-  const base = new THREE.Mesh(baseGeo, mat);
+  const base = new THREE.Mesh(new THREE.PlaneGeometry(a, a), mat);
   base.rotation.x = -Math.PI / 2;
   group.add(base);
   const apothem = a / 2;
@@ -662,12 +613,8 @@ function createPiramideQuadrangularPlanification(a, h) {
   for (let i = 0; i < 4; i++) {
     const angle = (i / 4) * Math.PI * 2;
     const triShape = new THREE.Shape();
-    triShape.moveTo(0, 0);
-    triShape.lineTo(a, 0);
-    triShape.lineTo(a / 2, slantHeight);
-    triShape.closePath();
-    const triGeo = new THREE.ShapeGeometry(triShape);
-    const triMesh = new THREE.Mesh(triGeo, mat);
+    triShape.moveTo(0, 0); triShape.lineTo(a, 0); triShape.lineTo(a / 2, slantHeight); triShape.closePath();
+    const triMesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape), mat);
     triMesh.position.set(Math.cos(angle) * apothem, 0, Math.sin(angle) * apothem);
     triMesh.rotation.y = -angle;
     group.add(triMesh);
@@ -676,11 +623,9 @@ function createPiramideQuadrangularPlanification(a, h) {
 }
 
 function createPiramidePentagonalPlanification(a, h) {
-  const gap = 0.05;
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-  const baseGeo = new THREE.CircleGeometry(a / (2 * Math.sin(Math.PI / 5)), 5);
-  const base = new THREE.Mesh(baseGeo, mat);
+  const base = new THREE.Mesh(new THREE.CircleGeometry(a / (2 * Math.sin(Math.PI / 5)), 5), mat);
   base.rotation.x = -Math.PI / 2;
   group.add(base);
   const apothem = a / (2 * Math.tan(Math.PI / 5));
@@ -688,12 +633,8 @@ function createPiramidePentagonalPlanification(a, h) {
   for (let i = 0; i < 5; i++) {
     const angle = (i / 5) * Math.PI * 2;
     const triShape = new THREE.Shape();
-    triShape.moveTo(0, 0);
-    triShape.lineTo(a, 0);
-    triShape.lineTo(a / 2, slantHeight);
-    triShape.closePath();
-    const triGeo = new THREE.ShapeGeometry(triShape);
-    const triMesh = new THREE.Mesh(triGeo, mat);
+    triShape.moveTo(0, 0); triShape.lineTo(a, 0); triShape.lineTo(a / 2, slantHeight); triShape.closePath();
+    const triMesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape), mat);
     triMesh.position.set(Math.cos(angle) * apothem, 0, Math.sin(angle) * apothem);
     triMesh.rotation.y = -angle;
     group.add(triMesh);
@@ -702,29 +643,20 @@ function createPiramidePentagonalPlanification(a, h) {
 }
 
 function createTetraedroPlanification(a) {
-  const gap = 0.05;
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
   const s = a;
   const h = Math.sqrt(3) / 2 * s;
   const baseShape = new THREE.Shape();
-  baseShape.moveTo(0, h * 2/3);
-  baseShape.lineTo(-s/2, -h/3);
-  baseShape.lineTo(s/2, -h/3);
-  baseShape.closePath();
-  const baseGeo = new THREE.ShapeGeometry(baseShape);
-  const base = new THREE.Mesh(baseGeo, mat);
+  baseShape.moveTo(0, h * 2/3); baseShape.lineTo(-s/2, -h/3); baseShape.lineTo(s/2, -h/3); baseShape.closePath();
+  const base = new THREE.Mesh(new THREE.ShapeGeometry(baseShape), mat);
   base.rotation.x = -Math.PI / 2;
   group.add(base);
   for (let i = 0; i < 3; i++) {
     const angle = (i / 3) * Math.PI * 2 + Math.PI / 2;
     const triShape = new THREE.Shape();
-    triShape.moveTo(0, 0);
-    triShape.lineTo(s, 0);
-    triShape.lineTo(s/2, h);
-    triShape.closePath();
-    const triGeo = new THREE.ShapeGeometry(triShape);
-    const triMesh = new THREE.Mesh(triGeo, mat);
+    triShape.moveTo(0, 0); triShape.lineTo(s, 0); triShape.lineTo(s/2, h); triShape.closePath();
+    const triMesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape), mat);
     triMesh.position.set(Math.cos(angle) * s/3, 0, Math.sin(angle) * s/3);
     triMesh.rotation.y = -angle;
     group.add(triMesh);
@@ -733,19 +665,14 @@ function createTetraedroPlanification(a) {
 }
 
 function createOctaedroPlanification(a) {
-  const gap = 0.05;
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
   const s = a;
   const h = Math.sqrt(3) / 2 * s;
   for (let i = 0; i < 4; i++) {
     const triShape = new THREE.Shape();
-    triShape.moveTo(0, 0);
-    triShape.lineTo(s, 0);
-    triShape.lineTo(s/2, h);
-    triShape.closePath();
-    const triGeo = new THREE.ShapeGeometry(triShape);
-    const triMesh = new THREE.Mesh(triGeo, mat);
+    triShape.moveTo(0, 0); triShape.lineTo(s, 0); triShape.lineTo(s/2, h); triShape.closePath();
+    const triMesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape), mat);
     const angle = (i / 4) * Math.PI * 2;
     triMesh.position.set(Math.cos(angle) * s/2, 0, Math.sin(angle) * s/2);
     triMesh.rotation.y = -angle;
@@ -753,12 +680,8 @@ function createOctaedroPlanification(a) {
   }
   for (let i = 0; i < 4; i++) {
     const triShape = new THREE.Shape();
-    triShape.moveTo(0, 0);
-    triShape.lineTo(s, 0);
-    triShape.lineTo(s/2, -h);
-    triShape.closePath();
-    const triGeo = new THREE.ShapeGeometry(triShape);
-    const triMesh = new THREE.Mesh(triGeo, mat);
+    triShape.moveTo(0, 0); triShape.lineTo(s, 0); triShape.lineTo(s/2, -h); triShape.closePath();
+    const triMesh = new THREE.Mesh(new THREE.ShapeGeometry(triShape), mat);
     const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
     triMesh.position.set(Math.cos(angle) * s/2, 0, Math.sin(angle) * s/2);
     triMesh.rotation.y = -angle;
@@ -770,8 +693,7 @@ function createOctaedroPlanification(a) {
 function createEsferaPlanification(r) {
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-  const circle = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
-  group.add(circle);
+  group.add(new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat));
   const inner = new THREE.Mesh(new THREE.RingGeometry(r * 0.3, r * 0.5, 32), mat);
   inner.rotation.x = -Math.PI / 2;
   group.add(inner);
@@ -782,23 +704,17 @@ function createCilindroPlanification(r, h) {
   const gap = 0.05;
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-  const circle1 = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
-  circle1.rotation.x = -Math.PI / 2;
-  circle1.position.y = h / 2 + gap;
-  group.add(circle1);
-  const circle2 = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
-  circle2.rotation.x = -Math.PI / 2;
-  circle2.position.y = -h / 2 - gap;
-  group.add(circle2);
+  const c1 = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
+  c1.rotation.x = -Math.PI / 2; c1.position.y = h / 2 + gap; group.add(c1);
+  const c2 = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
+  c2.rotation.x = -Math.PI / 2; c2.position.y = -h / 2 - gap; group.add(c2);
   const rect = new THREE.Mesh(new THREE.PlaneGeometry(2 * Math.PI * r, h), mat);
-  rect.position.y = 0;
   rect.rotation.x = -Math.PI / 2;
   group.add(rect);
   return group;
 }
 
 function createConePlanification(r, h) {
-  const gap = 0.05;
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
   const circle = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
@@ -810,8 +726,7 @@ function createConePlanification(r, h) {
   shape.moveTo(0, 0);
   shape.arc(0, 0, slantHeight, 0, sectorAngle);
   shape.closePath();
-  const sectorGeo = new THREE.ShapeGeometry(shape);
-  const sector = new THREE.Mesh(sectorGeo, mat);
+  const sector = new THREE.Mesh(new THREE.ShapeGeometry(shape), mat);
   sector.position.y = 0.5;
   group.add(sector);
   return group;
@@ -821,25 +736,14 @@ function createTroncoConePlanification(r1, r2, h) {
   const gap = 0.05;
   const group = new THREE.Group();
   const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
-  const circle1 = new THREE.Mesh(new THREE.CircleGeometry(r1, 32), mat);
-  circle1.rotation.x = -Math.PI / 2;
-  circle1.position.y = h / 2 + gap;
-  group.add(circle1);
-  const circle2 = new THREE.Mesh(new THREE.CircleGeometry(r2, 32), mat);
-  circle2.rotation.x = -Math.PI / 2;
-  circle2.position.y = -h / 2 - gap;
-  group.add(circle2);
+  const c1 = new THREE.Mesh(new THREE.CircleGeometry(r1, 32), mat);
+  c1.rotation.x = -Math.PI / 2; c1.position.y = h / 2 + gap; group.add(c1);
+  const c2 = new THREE.Mesh(new THREE.CircleGeometry(r2, 32), mat);
+  c2.rotation.x = -Math.PI / 2; c2.position.y = -h / 2 - gap; group.add(c2);
   const slantHeight = Math.sqrt(h * h + (r1 - r2) * (r1 - r2));
   const shape = new THREE.Shape();
-  shape.moveTo(0, 0);
-  shape.lineTo(r2, 0);
-  shape.lineTo(r1, slantHeight);
-  shape.lineTo(0, slantHeight);
-  shape.closePath();
-  const geo = new THREE.ShapeGeometry(shape);
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.y = 0;
-  group.add(mesh);
+  shape.moveTo(0, 0); shape.lineTo(r2, 0); shape.lineTo(r1, slantHeight); shape.lineTo(0, slantHeight); shape.closePath();
+  group.add(new THREE.Mesh(new THREE.ShapeGeometry(shape), mat));
   return group;
 }
 
@@ -866,7 +770,6 @@ class GeoVisionApp {
     this.controls.dampingFactor = 0.08;
     this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = 1.0;
-    this.controls.enableZoom = true;
     this.controls.minDistance = 2;
     this.controls.maxDistance = 20;
 
@@ -878,8 +781,7 @@ class GeoVisionApp {
     this.container.appendChild(this.labelRenderer.domElement);
 
     // Luzes
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-    this.scene.add(ambient);
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
     const dir = new THREE.DirectionalLight(0xffffff, 0.8);
     dir.position.set(5, 10, 7);
     dir.castShadow = true;
@@ -888,7 +790,6 @@ class GeoVisionApp {
     fill.position.set(-5, 0, 5);
     this.scene.add(fill);
 
-    // Grade de referência
     this.gridHelper = new THREE.GridHelper(20, 20, 0xe2e8f0, 0xe2e8f0);
     this.gridHelper.position.y = -1.5;
     this.scene.add(this.gridHelper);
@@ -903,8 +804,12 @@ class GeoVisionApp {
     this.planifySpeed = 1.5;
     this.isAnimating = false;
     this.animationDirection = 0;
+    this.animationTarget = 0;
     this.handRotation = { x: 0, y: 0 };
     this.gestureDetected = false;
+    this.hands = null;
+    this.cameraStream = null;
+    this.mediaPipeCamera = null;
 
     this.initUI();
     this.loadFigure('cube');
@@ -915,11 +820,8 @@ class GeoVisionApp {
   }
 
   initUI() {
-    // Preencher lista de figuras
     const polyList = document.getElementById('polyhedra-list');
     const roundList = document.getElementById('round-list');
-    const polyIcons = { cube: 'box', paralelepipedo: 'box', prisma_triangular: 'triangle', prisma_hexagonal: 'hexagon', piramide_triangular: 'pyramid', piramide_quadrangular: 'pyramid', piramide_pentagonal: 'pyramid', tetraedro: 'tetrahedron', octaedro: 'octahedron' };
-    const roundIcons = { esfera: 'circle', cilindro: 'cylinder', cone: 'cone', tronco_cone: 'frustum' };
 
     Object.entries(FIGURES).forEach(([key, fig]) => {
       if (fig.type !== 'polyhedron') return;
@@ -941,7 +843,6 @@ class GeoVisionApp {
       roundList.appendChild(item);
     });
 
-    // Botões
     document.getElementById('btn-reset-view').addEventListener('click', () => {
       this.controls.autoRotate = true;
       this.controls.target.set(0, 0, 0);
@@ -954,7 +855,6 @@ class GeoVisionApp {
       setTimeout(() => this.onResize(), 100);
     });
 
-    // Planificação
     const planifySlider = document.getElementById('planify-slider');
     const planifyValue = document.getElementById('planify-value');
     const speedSlider = document.getElementById('speed-slider');
@@ -973,21 +873,14 @@ class GeoVisionApp {
       speedValue.textContent = this.planifySpeed.toFixed(1) + 'x';
     });
 
-    document.getElementById('btn-planify').addEventListener('click', () => {
-      this.startPlanification(1);
-    });
+    document.getElementById('btn-planify').addEventListener('click', () => this.startPlanification(1));
+    document.getElementById('btn-remount').addEventListener('click', () => this.startPlanification(0));
 
-    document.getElementById('btn-remount').addEventListener('click', () => {
-      this.startPlanification(0);
-    });
-
-    // Câmera
     document.getElementById('btn-camera').addEventListener('click', () => this.openCameraModal());
     document.getElementById('btn-close-camera').addEventListener('click', () => this.closeCameraModal());
     document.getElementById('btn-start-camera').addEventListener('click', () => this.startCamera());
     document.getElementById('btn-stop-camera').addEventListener('click', () => this.stopCamera());
 
-    // Atualizar valor inicial
     planifyValue.textContent = '0%';
     speedValue.textContent = '1.5x';
   }
@@ -1002,13 +895,22 @@ class GeoVisionApp {
     this.planifyProgress = 0;
     this.controls.autoRotate = true;
 
-    // Atualizar UI
     document.querySelectorAll('.figure-item').forEach(el => {
       el.classList.toggle('active', el.dataset.key === key);
     });
     document.getElementById('status-figure').textContent = fig.name;
     document.getElementById('planify-slider').value = 0;
     document.getElementById('planify-value').textContent = '0%';
+
+    // Remover planificação ativa
+    if (this.planificationMesh) {
+      this.scene.remove(this.planificationMesh);
+      this.planificationMesh.traverse(c => {
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
+      });
+      this.planificationMesh = null;
+    }
 
     this.buildScene();
     this.updateProperties();
@@ -1019,8 +921,11 @@ class GeoVisionApp {
     const fig = FIGURES[this.currentFigureKey];
     if (this.mesh) {
       this.scene.remove(this.mesh);
-      this.mesh.geometry.dispose();
-      this.mesh.material.dispose();
+      this.mesh.traverse(c => {
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
+      });
+      this.mesh = null;
     }
 
     const geometry = fig.createGeometry(this.params);
@@ -1037,14 +942,11 @@ class GeoVisionApp {
     this.mesh.receiveShadow = true;
     this.scene.add(this.mesh);
 
-    // Adicionar arestas para poliedros
     if (fig.type === 'polyhedron') {
       const edges = new THREE.EdgesGeometry(geometry);
-      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: '#0b2b4f' }));
-      this.mesh.add(line);
+      this.mesh.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: '#0b2b4f' })));
     }
 
-    // Resetar câmera
     this.controls.target.set(0, 0, 0);
     this.camera.position.set(4, 3, 6);
     this.controls.update();
@@ -1052,12 +954,12 @@ class GeoVisionApp {
 
   updatePlanification() {
     const fig = FIGURES[this.currentFigureKey];
-    // Remover planificação anterior
+
     if (this.planificationMesh) {
       this.scene.remove(this.planificationMesh);
-      this.planificationMesh.traverse(child => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) child.material.dispose();
+      this.planificationMesh.traverse(c => {
+        if (c.geometry) c.geometry.dispose();
+        if (c.material) c.material.dispose();
       });
       this.planificationMesh = null;
     }
@@ -1067,21 +969,14 @@ class GeoVisionApp {
       return;
     }
 
-    // Esconder malha principal
     if (this.mesh) this.mesh.visible = false;
 
-    // Criar planificação
     const planification = fig.createPlanification(this.params);
-    planification.visible = true;
-    planification.position.y = 0;
     this.planificationMesh = planification;
     this.scene.add(planification);
 
-    // Ajustar opacidade baseada no progresso
-    planification.traverse(child => {
-      if (child.material) {
-        child.material.opacity = 0.5 + 0.35 * this.planifyProgress;
-      }
+    planification.traverse(c => {
+      if (c.material) c.material.opacity = 0.5 + 0.35 * this.planifyProgress;
     });
   }
 
@@ -1094,26 +989,25 @@ class GeoVisionApp {
 
   updateProperties() {
     const fig = FIGURES[this.currentFigureKey];
-    const props = fig.properties(this.params);
     const container = document.getElementById('properties-container');
-    container.innerHTML = Object.entries(props).map(([key, val]) =>
-      `<div class="property-row"><span class="property-label">${key}</span><span class="property-value">${val}</span></div>`
-    ).join('');
-
-    // Fórmulas
+    const props = fig.properties(this.params);
     const formulas = fig.formulas(this.params);
-    const formulaContainer = document.createElement('div');
-    formulaContainer.style.marginTop = '8px';
-    formulaContainer.innerHTML = formulas.map(f =>
-      `<div class="property-row" style="flex-direction:column;align-items:flex-start;padding:4px 0;">
-        <div style="display:flex;justify-content:space-between;width:100%;">
-          <span class="property-label">${f.label}</span>
-          <span class="property-formula">${f.formula}</span>
-        </div>
-        <div class="property-formula" style="font-size:11px;color:#64748b;margin-top:1px;">${f.calc}</div>
-      </div>`
-    ).join('');
-    container.appendChild(formulaContainer);
+
+    container.innerHTML =
+      Object.entries(props).map(([k, v]) =>
+        `<div class="property-row"><span class="property-label">${k}</span><span class="property-value">${v}</span></div>`
+      ).join('') +
+      `<div style="margin-top:8px;">` +
+      formulas.map(f =>
+        `<div class="property-row" style="flex-direction:column;align-items:flex-start;padding:4px 0;">
+          <div style="display:flex;justify-content:space-between;width:100%;gap:8px;">
+            <span class="property-label">${f.label}</span>
+            <span class="property-formula">${f.formula}</span>
+          </div>
+          <div class="property-formula" style="font-size:11px;color:#64748b;margin-top:1px;">${f.calc}</div>
+        </div>`
+      ).join('') +
+      `</div>`;
   }
 
   updateDimensions() {
@@ -1137,9 +1031,7 @@ class GeoVisionApp {
         this.params[def.key] = val;
         this.buildScene();
         this.updateProperties();
-        if (this.isPlanified) {
-          this.updatePlanification();
-        }
+        if (this.isPlanified) this.updatePlanification();
       });
       container.appendChild(row);
     });
@@ -1158,7 +1050,6 @@ class GeoVisionApp {
   animate() {
     requestAnimationFrame(() => this.animate());
 
-    // Animação de planificação
     if (this.isAnimating) {
       const step = 0.02 * this.planifySpeed;
       this.planifyProgress += this.animationDirection * step;
@@ -1175,7 +1066,6 @@ class GeoVisionApp {
       this.isPlanified = this.planifyProgress > 0.01;
     }
 
-    // Rotação por gestos
     if (this.mesh && this.gestureDetected) {
       this.mesh.rotation.y += this.handRotation.x * 0.03;
       this.mesh.rotation.x += this.handRotation.y * 0.03;
@@ -1191,7 +1081,7 @@ class GeoVisionApp {
   }
 
   // ============================================================
-  // CÂMERA E MEDIAPIPE
+  // CÂMERA E MEDIAPIPE (usa window.Hands / window.Camera globais)
   // ============================================================
 
   openCameraModal() {
@@ -1207,15 +1097,21 @@ class GeoVisionApp {
     const video = document.getElementById('webcam');
     const canvas = document.getElementById('gesture-canvas');
 
+    if (typeof window.Hands === 'undefined' || typeof window.Camera === 'undefined') {
+      statusEl.innerHTML = '<span class="status-dot" style="background:#dc2626;"></span> MediaPipe não carregou. Recarregue a página.';
+      return;
+    }
+
     try {
       statusEl.innerHTML = '<div class="spinner"></div> Inicializando câmera...';
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
-      video.srcObject = stream;
+      this.cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: 640, height: 480 }
+      });
+      video.srcObject = this.cameraStream;
       await video.play();
 
-      // Configurar MediaPipe Hands
-      const hands = new Hands({
+      const hands = new window.Hands({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}`,
       });
 
@@ -1226,10 +1122,8 @@ class GeoVisionApp {
         minTrackingConfidence: 0.7,
       });
 
-      const camera = new Camera(video, {
-        onFrame: async () => {
-          await hands.send({ image: video });
-        },
+      const camera = new window.Camera(video, {
+        onFrame: async () => { await hands.send({ image: video }); },
         width: 640,
         height: 480,
       });
@@ -1242,21 +1136,16 @@ class GeoVisionApp {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-          const landmarks = results.multiHandLandmarks[0];
+          const lm = results.multiHandLandmarks[0];
 
-          // Desenhar landmarks
           ctx.fillStyle = '#3b82f6';
           ctx.strokeStyle = '#1e4b7a';
           ctx.lineWidth = 2;
-          for (let i = 0; i < landmarks.length; i++) {
-            const lm = landmarks[i];
-            const x = lm.x * canvas.width;
-            const y = lm.y * canvas.height;
+          for (let i = 0; i < lm.length; i++) {
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.arc(lm[i].x * canvas.width, lm[i].y * canvas.height, 4, 0, Math.PI * 2);
             ctx.fill();
           }
-          // Conexões
           const connections = [
             [0,1],[1,2],[2,3],[3,4],
             [0,5],[5,6],[6,7],[7,8],
@@ -1267,36 +1156,23 @@ class GeoVisionApp {
           ];
           ctx.beginPath();
           connections.forEach(([a, b]) => {
-            const p1 = landmarks[a];
-            const p2 = landmarks[b];
-            ctx.moveTo(p1.x * canvas.width, p1.y * canvas.height);
-            ctx.lineTo(p2.x * canvas.width, p2.y * canvas.height);
+            ctx.moveTo(lm[a].x * canvas.width, lm[a].y * canvas.height);
+            ctx.lineTo(lm[b].x * canvas.width, lm[b].y * canvas.height);
           });
           ctx.stroke();
 
-          // Rotação baseada na posição do pulso
-          const wrist = landmarks[0];
-          const middleMcp = landmarks[9];
-          this.handRotation.x = (wrist.x - 0.5) * 2;
-          this.handRotation.y = (wrist.y - 0.5) * 2;
+          this.handRotation.x = (lm[0].x - 0.5) * 2;
+          this.handRotation.y = (lm[0].y - 0.5) * 2;
           this.gestureDetected = true;
 
-          // Pinça (polegar + indicador)
-          const thumbTip = landmarks[4];
-          const indexTip = landmarks[8];
+          const thumbTip = lm[4];
+          const indexTip = lm[8];
           const dist = Math.sqrt(
             Math.pow(thumbTip.x - indexTip.x, 2) +
             Math.pow(thumbTip.y - indexTip.y, 2)
           );
-          if (dist < 0.05) {
-            // Gesto de pinça: destacar figura
-            if (this.mesh) {
-              this.mesh.material.color.set('#60a5fa');
-            }
-          } else {
-            if (this.mesh) {
-              this.mesh.material.color.set('#3b82f6');
-            }
+          if (this.mesh) {
+            this.mesh.material.color.set(dist < 0.05 ? '#60a5fa' : '#3b82f6');
           }
 
           statusEl.innerHTML = '<span class="status-dot" style="background:#22c55e;"></span> Mão detectada — mova para rotacionar';
@@ -1307,12 +1183,14 @@ class GeoVisionApp {
       });
 
       this.hands = hands;
-      this.camera = camera;
+      this.mediaPipeCamera = camera;
 
       statusEl.innerHTML = '<span class="status-dot" style="background:#22c55e;"></span> Câmera ativa — aguardando mão';
+
       document.getElementById('btn-start-camera').disabled = true;
-      document.getElementById('status-camera').className = 'status-dot';
-      document.getElementById('status-camera').style.background = '#22c55e';
+      const dot = document.getElementById('status-camera');
+      dot.classList.remove('off');
+      dot.style.background = '#22c55e';
 
     } catch (err) {
       console.error('Erro na câmera:', err);
@@ -1321,13 +1199,17 @@ class GeoVisionApp {
   }
 
   stopCamera() {
-    if (this.camera) {
-      this.camera.stop();
-      this.camera = null;
+    if (this.mediaPipeCamera) {
+      try { this.mediaPipeCamera.stop(); } catch (e) {}
+      this.mediaPipeCamera = null;
     }
     if (this.hands) {
-      this.hands.close();
+      try { this.hands.close(); } catch (e) {}
       this.hands = null;
+    }
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(t => t.stop());
+      this.cameraStream = null;
     }
     const video = document.getElementById('webcam');
     if (video.srcObject) {
@@ -1335,11 +1217,17 @@ class GeoVisionApp {
       video.srcObject = null;
     }
     this.gestureDetected = false;
+
     document.getElementById('camera-status').innerHTML = '<span class="status-dot off"></span> Câmera desligada';
     document.getElementById('btn-start-camera').disabled = false;
-    document.getElementById('status-camera').className = 'status-dot off';
-    document.getElementById('status-camera').style.background = '';
-    document.getElementById('gesture-canvas').getContext('2d').clearRect(0, 0, 999, 999);
+
+    const dot = document.getElementById('status-camera');
+    dot.classList.add('off');
+    dot.style.background = '';
+
+    const canvas = document.getElementById('gesture-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 }
 
@@ -1347,14 +1235,23 @@ class GeoVisionApp {
 // INICIALIZAÇÃO
 // ============================================================
 
-import { Hands } from '@mediapipe/hands';
-import { Camera } from '@mediapipe/camera_utils';
-
 document.addEventListener('DOMContentLoaded', () => {
-  // Esconder loading após um pequeno delay
-  setTimeout(() => {
-    document.getElementById('loading-overlay').style.display = 'none';
-  }, 600);
-
-  window.app = new GeoVisionApp();
+  const overlay = document.getElementById('loading-overlay');
+  try {
+    window.app = new GeoVisionApp();
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (overlay) overlay.classList.add('hidden');
+      }, 300);
+    });
+  } catch (err) {
+    console.error('Erro ao inicializar:', err);
+    if (overlay) {
+      overlay.innerHTML = `
+        <div style="color:#dc2626;padding:20px;text-align:center;font-family:inherit;">
+          <strong>Erro ao carregar</strong><br>
+          <span style="font-size:12px;">${err.message}</span>
+        </div>`;
+    }
+  }
 });
