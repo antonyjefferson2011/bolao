@@ -1,506 +1,1360 @@
-/* Delicatta Cristã — interações da página de vendas */
+// ============================================================
+// GeoVision 3D — Laboratório de Geometria Espacial
+// Implementação completa com Three.js, MediaPipe e cálculos.
+// ============================================================
 
-const CONFIG = {
-  whatsapp: '5586998174869', // troque pelo número real, com DDI + DDD
-  instagram: 'delicattacrista',
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ============================================================
+// 1. DADOS GEOMÉTRICOS E MATEMÁTICOS
+// ============================================================
+
+const FIGURES = {
+  cube: {
+    name: 'Cubo',
+    type: 'polyhedron',
+    icon: 'box',
+    params: { a: 2 },
+    paramDefs: [{ key: 'a', label: 'Aresta', min: 0.5, max: 5, step: 0.1 }],
+    properties: (p) => {
+      const a = p.a;
+      return {
+        'Aresta (a)': a.toFixed(2),
+        'Face': 'Quadrado',
+        'Faces': 6,
+        'Arestas': 12,
+        'Vértices': 8,
+        'Área da base': (a * a).toFixed(2),
+        'Área lateral': (4 * a * a).toFixed(2),
+        'Área total': (6 * a * a).toFixed(2),
+        'Volume': (a * a * a).toFixed(2),
+      };
+    },
+    formulas: (p) => [
+      { label: 'Área da base', formula: 'a²', calc: `${p.a.toFixed(2)}² = ${(p.a*p.a).toFixed(2)}` },
+      { label: 'Área lateral', formula: '4a²', calc: `4·${p.a.toFixed(2)}² = ${(4*p.a*p.a).toFixed(2)}` },
+      { label: 'Área total', formula: '6a²', calc: `6·${p.a.toFixed(2)}² = ${(6*p.a*p.a).toFixed(2)}` },
+      { label: 'Volume', formula: 'a³', calc: `${p.a.toFixed(2)}³ = ${(p.a*p.a*p.a).toFixed(2)}` },
+    ],
+    createGeometry: (p) => new THREE.BoxGeometry(p.a, p.a, p.a),
+    createPlanification: (p) => createCubePlanification(p.a),
+  },
+  paralelepipedo: {
+    name: 'Paralelepípedo',
+    type: 'polyhedron',
+    icon: 'box',
+    params: { a: 2, b: 1.5, c: 1 },
+    paramDefs: [
+      { key: 'a', label: 'Comprimento', min: 0.5, max: 5, step: 0.1 },
+      { key: 'b', label: 'Largura', min: 0.5, max: 5, step: 0.1 },
+      { key: 'c', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { a, b, c } = p;
+      const base = a * b;
+      const lateral = 2 * (a * c + b * c);
+      return {
+        'Comprimento (a)': a.toFixed(2),
+        'Largura (b)': b.toFixed(2),
+        'Altura (c)': c.toFixed(2),
+        'Faces': 6,
+        'Arestas': 12,
+        'Vértices': 8,
+        'Área da base': base.toFixed(2),
+        'Área lateral': lateral.toFixed(2),
+        'Área total': (2 * base + lateral).toFixed(2),
+        'Volume': (a * b * c).toFixed(2),
+      };
+    },
+    formulas: (p) => [
+      { label: 'Área da base', formula: 'a·b', calc: `${p.a.toFixed(2)}·${p.b.toFixed(2)} = ${(p.a*p.b).toFixed(2)}` },
+      { label: 'Área lateral', formula: '2(a·c + b·c)', calc: `2(${p.a.toFixed(2)}·${p.c.toFixed(2)} + ${p.b.toFixed(2)}·${p.c.toFixed(2)}) = ${(2*(p.a*p.c+p.b*p.c)).toFixed(2)}` },
+      { label: 'Área total', formula: '2(ab + ac + bc)', calc: `2(${p.a.toFixed(2)}·${p.b.toFixed(2)} + ${p.a.toFixed(2)}·${p.c.toFixed(2)} + ${p.b.toFixed(2)}·${p.c.toFixed(2)}) = ${(2*(p.a*p.b+p.a*p.c+p.b*p.c)).toFixed(2)}` },
+      { label: 'Volume', formula: 'a·b·c', calc: `${p.a.toFixed(2)}·${p.b.toFixed(2)}·${p.c.toFixed(2)} = ${(p.a*p.b*p.c).toFixed(2)}` },
+    ],
+    createGeometry: (p) => new THREE.BoxGeometry(p.a, p.c, p.b),
+    createPlanification: (p) => createParalelepipedoPlanification(p.a, p.c, p.b),
+  },
+  prisma_triangular: {
+    name: 'Prisma Triangular',
+    type: 'polyhedron',
+    icon: 'triangle',
+    params: { a: 2, h: 2 },
+    paramDefs: [
+      { key: 'a', label: 'Lado da base', min: 0.5, max: 5, step: 0.1 },
+      { key: 'h', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { a, h } = p;
+      const baseArea = (Math.sqrt(3) / 4) * a * a;
+      const lateralArea = 3 * a * h;
+      return {
+        'Lado da base (a)': a.toFixed(2),
+        'Altura (h)': h.toFixed(2),
+        'Faces': 5,
+        'Arestas': 9,
+        'Vértices': 6,
+        'Área da base': baseArea.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (2 * baseArea + lateralArea).toFixed(2),
+        'Volume': (baseArea * h).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const baseArea = (Math.sqrt(3) / 4) * p.a * p.a;
+      const lateralArea = 3 * p.a * p.h;
+      return [
+        { label: 'Área da base', formula: '(√3/4)·a²', calc: `(√3/4)·${p.a.toFixed(2)}² = ${baseArea.toFixed(2)}` },
+        { label: 'Área lateral', formula: '3·a·h', calc: `3·${p.a.toFixed(2)}·${p.h.toFixed(2)} = ${lateralArea.toFixed(2)}` },
+        { label: 'Área total', formula: '2·Ab + Al', calc: `2·${baseArea.toFixed(2)} + ${lateralArea.toFixed(2)} = ${(2*baseArea+lateralArea).toFixed(2)}` },
+        { label: 'Volume', formula: 'Ab·h', calc: `${baseArea.toFixed(2)}·${p.h.toFixed(2)} = ${(baseArea*p.h).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => {
+      const shape = new THREE.Shape();
+      const a = p.a;
+      const h = Math.sqrt(3) / 2 * a;
+      shape.moveTo(0, h * 2/3);
+      shape.lineTo(-a/2, -h/3);
+      shape.lineTo(a/2, -h/3);
+      shape.closePath();
+      const extrude = new THREE.ExtrudeGeometry(shape, { depth: p.h, bevelEnabled: false });
+      extrude.center();
+      return extrude;
+    },
+    createPlanification: (p) => createPrismaTriangularPlanification(p.a, p.h),
+  },
+  prisma_hexagonal: {
+    name: 'Prisma Hexagonal',
+    type: 'polyhedron',
+    icon: 'hexagon',
+    params: { a: 1.5, h: 2 },
+    paramDefs: [
+      { key: 'a', label: 'Lado da base', min: 0.5, max: 4, step: 0.1 },
+      { key: 'h', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { a, h } = p;
+      const baseArea = (3 * Math.sqrt(3) / 2) * a * a;
+      const lateralArea = 6 * a * h;
+      return {
+        'Lado da base (a)': a.toFixed(2),
+        'Altura (h)': h.toFixed(2),
+        'Faces': 8,
+        'Arestas': 18,
+        'Vértices': 12,
+        'Área da base': baseArea.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (2 * baseArea + lateralArea).toFixed(2),
+        'Volume': (baseArea * h).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const baseArea = (3 * Math.sqrt(3) / 2) * p.a * p.a;
+      const lateralArea = 6 * p.a * p.h;
+      return [
+        { label: 'Área da base', formula: '(3√3/2)·a²', calc: `(3√3/2)·${p.a.toFixed(2)}² = ${baseArea.toFixed(2)}` },
+        { label: 'Área lateral', formula: '6·a·h', calc: `6·${p.a.toFixed(2)}·${p.h.toFixed(2)} = ${lateralArea.toFixed(2)}` },
+        { label: 'Área total', formula: '2·Ab + Al', calc: `2·${baseArea.toFixed(2)} + ${lateralArea.toFixed(2)} = ${(2*baseArea+lateralArea).toFixed(2)}` },
+        { label: 'Volume', formula: 'Ab·h', calc: `${baseArea.toFixed(2)}·${p.h.toFixed(2)} = ${(baseArea*p.h).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.CylinderGeometry(p.a, p.a, p.h, 6),
+    createPlanification: (p) => createPrismaHexagonalPlanification(p.a, p.h),
+  },
+  piramide_triangular: {
+    name: 'Pirâmide Triangular',
+    type: 'polyhedron',
+    icon: 'pyramid',
+    params: { a: 2, h: 2.5 },
+    paramDefs: [
+      { key: 'a', label: 'Lado da base', min: 0.5, max: 5, step: 0.1 },
+      { key: 'h', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { a, h } = p;
+      const baseArea = (Math.sqrt(3) / 4) * a * a;
+      const apothem = a / (2 * Math.sqrt(3));
+      const slantHeight = Math.sqrt(h * h + apothem * apothem);
+      const lateralArea = 3 * (a * slantHeight / 2);
+      return {
+        'Lado da base (a)': a.toFixed(2),
+        'Altura (h)': h.toFixed(2),
+        'Faces': 4,
+        'Arestas': 6,
+        'Vértices': 4,
+        'Área da base': baseArea.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (baseArea + lateralArea).toFixed(2),
+        'Volume': (baseArea * h / 3).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const baseArea = (Math.sqrt(3) / 4) * p.a * p.a;
+      const apothem = p.a / (2 * Math.sqrt(3));
+      const slantHeight = Math.sqrt(p.h * p.h + apothem * apothem);
+      const lateralArea = 3 * (p.a * slantHeight / 2);
+      return [
+        { label: 'Área da base', formula: '(√3/4)·a²', calc: `(√3/4)·${p.a.toFixed(2)}² = ${baseArea.toFixed(2)}` },
+        { label: 'Apotema da base', formula: 'a/(2√3)', calc: `${p.a.toFixed(2)}/(2√3) = ${apothem.toFixed(2)}` },
+        { label: 'Altura da face', formula: '√(h² + m²)', calc: `√(${p.h.toFixed(2)}² + ${apothem.toFixed(2)}²) = ${slantHeight.toFixed(2)}` },
+        { label: 'Área lateral', formula: '3·(a·g/2)', calc: `3·(${p.a.toFixed(2)}·${slantHeight.toFixed(2)}/2) = ${lateralArea.toFixed(2)}` },
+        { label: 'Volume', formula: 'Ab·h/3', calc: `${baseArea.toFixed(2)}·${p.h.toFixed(2)}/3 = ${(baseArea*p.h/3).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => {
+      const shape = new THREE.Shape();
+      const a = p.a;
+      const h = Math.sqrt(3) / 2 * a;
+      shape.moveTo(0, h * 2/3);
+      shape.lineTo(-a/2, -h/3);
+      shape.lineTo(a/2, -h/3);
+      shape.closePath();
+      const extrude = new THREE.ExtrudeGeometry(shape, { depth: 0.01, bevelEnabled: false });
+      extrude.center();
+      return new THREE.ConeGeometry(a / Math.sqrt(3), p.h, 3);
+    },
+    createPlanification: (p) => createPiramideTriangularPlanification(p.a, p.h),
+  },
+  piramide_quadrangular: {
+    name: 'Pirâmide Quadrangular',
+    type: 'polyhedron',
+    icon: 'pyramid',
+    params: { a: 2, h: 2.5 },
+    paramDefs: [
+      { key: 'a', label: 'Lado da base', min: 0.5, max: 5, step: 0.1 },
+      { key: 'h', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { a, h } = p;
+      const baseArea = a * a;
+      const apothem = a / 2;
+      const slantHeight = Math.sqrt(h * h + apothem * apothem);
+      const lateralArea = 4 * (a * slantHeight / 2);
+      return {
+        'Lado da base (a)': a.toFixed(2),
+        'Altura (h)': h.toFixed(2),
+        'Faces': 5,
+        'Arestas': 8,
+        'Vértices': 5,
+        'Área da base': baseArea.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (baseArea + lateralArea).toFixed(2),
+        'Volume': (baseArea * h / 3).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const baseArea = p.a * p.a;
+      const apothem = p.a / 2;
+      const slantHeight = Math.sqrt(p.h * p.h + apothem * apothem);
+      const lateralArea = 4 * (p.a * slantHeight / 2);
+      return [
+        { label: 'Área da base', formula: 'a²', calc: `${p.a.toFixed(2)}² = ${baseArea.toFixed(2)}` },
+        { label: 'Apotema da base', formula: 'a/2', calc: `${p.a.toFixed(2)}/2 = ${apothem.toFixed(2)}` },
+        { label: 'Altura da face', formula: '√(h² + m²)', calc: `√(${p.h.toFixed(2)}² + ${apothem.toFixed(2)}²) = ${slantHeight.toFixed(2)}` },
+        { label: 'Área lateral', formula: '4·(a·g/2)', calc: `4·(${p.a.toFixed(2)}·${slantHeight.toFixed(2)}/2) = ${lateralArea.toFixed(2)}` },
+        { label: 'Volume', formula: 'Ab·h/3', calc: `${baseArea.toFixed(2)}·${p.h.toFixed(2)}/3 = ${(baseArea*p.h/3).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.ConeGeometry(p.a / Math.sqrt(2), p.h, 4),
+    createPlanification: (p) => createPiramideQuadrangularPlanification(p.a, p.h),
+  },
+  piramide_pentagonal: {
+    name: 'Pirâmide Pentagonal',
+    type: 'polyhedron',
+    icon: 'pyramid',
+    params: { a: 1.5, h: 2.5 },
+    paramDefs: [
+      { key: 'a', label: 'Lado da base', min: 0.5, max: 4, step: 0.1 },
+      { key: 'h', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { a, h } = p;
+      const baseArea = (5 * a * a) / (4 * Math.tan(Math.PI / 5));
+      const apothem = a / (2 * Math.tan(Math.PI / 5));
+      const slantHeight = Math.sqrt(h * h + apothem * apothem);
+      const lateralArea = 5 * (a * slantHeight / 2);
+      return {
+        'Lado da base (a)': a.toFixed(2),
+        'Altura (h)': h.toFixed(2),
+        'Faces': 6,
+        'Arestas': 10,
+        'Vértices': 6,
+        'Área da base': baseArea.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (baseArea + lateralArea).toFixed(2),
+        'Volume': (baseArea * h / 3).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const baseArea = (5 * p.a * p.a) / (4 * Math.tan(Math.PI / 5));
+      const apothem = p.a / (2 * Math.tan(Math.PI / 5));
+      const slantHeight = Math.sqrt(p.h * p.h + apothem * apothem);
+      const lateralArea = 5 * (p.a * slantHeight / 2);
+      return [
+        { label: 'Área da base', formula: '5a²/(4·tan(π/5))', calc: `5·${p.a.toFixed(2)}²/(4·tan(π/5)) = ${baseArea.toFixed(2)}` },
+        { label: 'Apotema da base', formula: 'a/(2·tan(π/5))', calc: `${p.a.toFixed(2)}/(2·tan(π/5)) = ${apothem.toFixed(2)}` },
+        { label: 'Altura da face', formula: '√(h² + m²)', calc: `√(${p.h.toFixed(2)}² + ${apothem.toFixed(2)}²) = ${slantHeight.toFixed(2)}` },
+        { label: 'Área lateral', formula: '5·(a·g/2)', calc: `5·(${p.a.toFixed(2)}·${slantHeight.toFixed(2)}/2) = ${lateralArea.toFixed(2)}` },
+        { label: 'Volume', formula: 'Ab·h/3', calc: `${baseArea.toFixed(2)}·${p.h.toFixed(2)}/3 = ${(baseArea*p.h/3).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.ConeGeometry(p.a / (2 * Math.sin(Math.PI / 5)), p.h, 5),
+    createPlanification: (p) => createPiramidePentagonalPlanification(p.a, p.h),
+  },
+  tetraedro: {
+    name: 'Tetraedro',
+    type: 'polyhedron',
+    icon: 'tetrahedron',
+    params: { a: 2 },
+    paramDefs: [{ key: 'a', label: 'Aresta', min: 0.5, max: 5, step: 0.1 }],
+    properties: (p) => {
+      const a = p.a;
+      const baseArea = (Math.sqrt(3) / 4) * a * a;
+      const height = Math.sqrt(2/3) * a;
+      const volume = (a * a * a) / (6 * Math.sqrt(2));
+      const lateralArea = 3 * baseArea;
+      return {
+        'Aresta (a)': a.toFixed(2),
+        'Faces': 4,
+        'Arestas': 6,
+        'Vértices': 4,
+        'Área da base': baseArea.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (4 * baseArea).toFixed(2),
+        'Volume': volume.toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const baseArea = (Math.sqrt(3) / 4) * p.a * p.a;
+      return [
+        { label: 'Área da face', formula: '(√3/4)·a²', calc: `(√3/4)·${p.a.toFixed(2)}² = ${baseArea.toFixed(2)}` },
+        { label: 'Área total', formula: '4·Af', calc: `4·${baseArea.toFixed(2)} = ${(4*baseArea).toFixed(2)}` },
+        { label: 'Volume', formula: 'a³/(6√2)', calc: `${p.a.toFixed(2)}³/(6√2) = ${((p.a**3)/(6*Math.sqrt(2))).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.TetrahedronGeometry(p.a * 0.8),
+    createPlanification: (p) => createTetraedroPlanification(p.a),
+  },
+  octaedro: {
+    name: 'Octaedro',
+    type: 'polyhedron',
+    icon: 'octahedron',
+    params: { a: 2 },
+    paramDefs: [{ key: 'a', label: 'Aresta', min: 0.5, max: 5, step: 0.1 }],
+    properties: (p) => {
+      const a = p.a;
+      const faceArea = (Math.sqrt(3) / 4) * a * a;
+      const volume = (Math.sqrt(2) / 3) * a * a * a;
+      return {
+        'Aresta (a)': a.toFixed(2),
+        'Faces': 8,
+        'Arestas': 12,
+        'Vértices': 6,
+        'Área da face': faceArea.toFixed(2),
+        'Área total': (8 * faceArea).toFixed(2),
+        'Volume': volume.toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const faceArea = (Math.sqrt(3) / 4) * p.a * p.a;
+      return [
+        { label: 'Área da face', formula: '(√3/4)·a²', calc: `(√3/4)·${p.a.toFixed(2)}² = ${faceArea.toFixed(2)}` },
+        { label: 'Área total', formula: '8·Af', calc: `8·${faceArea.toFixed(2)} = ${(8*faceArea).toFixed(2)}` },
+        { label: 'Volume', formula: '(√2/3)·a³', calc: `(√2/3)·${p.a.toFixed(2)}³ = ${((Math.sqrt(2)/3)*p.a**3).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.OctahedronGeometry(p.a * 0.8),
+    createPlanification: (p) => createOctaedroPlanification(p.a),
+  },
+  esfera: {
+    name: 'Esfera',
+    type: 'round',
+    icon: 'sphere',
+    params: { r: 1.5 },
+    paramDefs: [{ key: 'r', label: 'Raio', min: 0.5, max: 4, step: 0.1 }],
+    properties: (p) => {
+      const r = p.r;
+      return {
+        'Raio (r)': r.toFixed(2),
+        'Faces': 1,
+        'Arestas': 0,
+        'Vértices': 0,
+        'Área da superfície': (4 * Math.PI * r * r).toFixed(2),
+        'Volume': (4/3 * Math.PI * r * r * r).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const r = p.r;
+      return [
+        { label: 'Área da superfície', formula: '4πr²', calc: `4π·${r.toFixed(2)}² = ${(4*Math.PI*r*r).toFixed(2)}` },
+        { label: 'Volume', formula: '4πr³/3', calc: `4π·${r.toFixed(2)}³/3 = ${((4/3)*Math.PI*r*r*r).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.SphereGeometry(p.r, 32, 32),
+    createPlanification: (p) => createEsferaPlanification(p.r),
+  },
+  cilindro: {
+    name: 'Cilindro',
+    type: 'round',
+    icon: 'cylinder',
+    params: { r: 1.2, h: 2.5 },
+    paramDefs: [
+      { key: 'r', label: 'Raio', min: 0.5, max: 4, step: 0.1 },
+      { key: 'h', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { r, h } = p;
+      const baseArea = Math.PI * r * r;
+      const lateralArea = 2 * Math.PI * r * h;
+      return {
+        'Raio (r)': r.toFixed(2),
+        'Altura (h)': h.toFixed(2),
+        'Faces': 3,
+        'Arestas': 2,
+        'Vértices': 0,
+        'Área da base': baseArea.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (2 * baseArea + lateralArea).toFixed(2),
+        'Volume': (baseArea * h).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const baseArea = Math.PI * p.r * p.r;
+      const lateralArea = 2 * Math.PI * p.r * p.h;
+      return [
+        { label: 'Área da base', formula: 'πr²', calc: `π·${p.r.toFixed(2)}² = ${baseArea.toFixed(2)}` },
+        { label: 'Área lateral', formula: '2πrh', calc: `2π·${p.r.toFixed(2)}·${p.h.toFixed(2)} = ${lateralArea.toFixed(2)}` },
+        { label: 'Área total', formula: '2πr(r+h)', calc: `2π·${p.r.toFixed(2)}·(${p.r.toFixed(2)}+${p.h.toFixed(2)}) = ${(2*baseArea+lateralArea).toFixed(2)}` },
+        { label: 'Volume', formula: 'πr²h', calc: `π·${p.r.toFixed(2)}²·${p.h.toFixed(2)} = ${(baseArea*p.h).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.CylinderGeometry(p.r, p.r, p.h, 32),
+    createPlanification: (p) => createCilindroPlanification(p.r, p.h),
+  },
+  cone: {
+    name: 'Cone',
+    type: 'round',
+    icon: 'cone',
+    params: { r: 1.2, h: 2.5 },
+    paramDefs: [
+      { key: 'r', label: 'Raio', min: 0.5, max: 4, step: 0.1 },
+      { key: 'h', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { r, h } = p;
+      const baseArea = Math.PI * r * r;
+      const slantHeight = Math.sqrt(r * r + h * h);
+      const lateralArea = Math.PI * r * slantHeight;
+      return {
+        'Raio (r)': r.toFixed(2),
+        'Altura (h)': h.toFixed(2),
+        'Geratriz (g)': slantHeight.toFixed(2),
+        'Faces': 2,
+        'Arestas': 1,
+        'Vértices': 1,
+        'Área da base': baseArea.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (baseArea + lateralArea).toFixed(2),
+        'Volume': (baseArea * h / 3).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const baseArea = Math.PI * p.r * p.r;
+      const slantHeight = Math.sqrt(p.r * p.r + p.h * p.h);
+      const lateralArea = Math.PI * p.r * slantHeight;
+      return [
+        { label: 'Área da base', formula: 'πr²', calc: `π·${p.r.toFixed(2)}² = ${baseArea.toFixed(2)}` },
+        { label: 'Geratriz', formula: '√(r² + h²)', calc: `√(${p.r.toFixed(2)}² + ${p.h.toFixed(2)}²) = ${slantHeight.toFixed(2)}` },
+        { label: 'Área lateral', formula: 'πrg', calc: `π·${p.r.toFixed(2)}·${slantHeight.toFixed(2)} = ${lateralArea.toFixed(2)}` },
+        { label: 'Área total', formula: 'πr(r+g)', calc: `π·${p.r.toFixed(2)}·(${p.r.toFixed(2)}+${slantHeight.toFixed(2)}) = ${(baseArea+lateralArea).toFixed(2)}` },
+        { label: 'Volume', formula: 'πr²h/3', calc: `π·${p.r.toFixed(2)}²·${p.h.toFixed(2)}/3 = ${(baseArea*p.h/3).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.ConeGeometry(p.r, p.h, 32),
+    createPlanification: (p) => createConePlanification(p.r, p.h),
+  },
+  tronco_cone: {
+    name: 'Tronco de Cone',
+    type: 'round',
+    icon: 'frustum',
+    params: { r1: 1.5, r2: 0.8, h: 2 },
+    paramDefs: [
+      { key: 'r1', label: 'Raio maior', min: 0.5, max: 4, step: 0.1 },
+      { key: 'r2', label: 'Raio menor', min: 0.3, max: 3.5, step: 0.1 },
+      { key: 'h', label: 'Altura', min: 0.5, max: 5, step: 0.1 },
+    ],
+    properties: (p) => {
+      const { r1, r2, h } = p;
+      const baseArea1 = Math.PI * r1 * r1;
+      const baseArea2 = Math.PI * r2 * r2;
+      const slantHeight = Math.sqrt(h * h + (r1 - r2) * (r1 - r2));
+      const lateralArea = Math.PI * (r1 + r2) * slantHeight;
+      return {
+        'Raio maior (R)': r1.toFixed(2),
+        'Raio menor (r)': r2.toFixed(2),
+        'Altura (h)': h.toFixed(2),
+        'Geratriz (g)': slantHeight.toFixed(2),
+        'Faces': 3,
+        'Arestas': 2,
+        'Vértices': 0,
+        'Área da base maior': baseArea1.toFixed(2),
+        'Área da base menor': baseArea2.toFixed(2),
+        'Área lateral': lateralArea.toFixed(2),
+        'Área total': (baseArea1 + baseArea2 + lateralArea).toFixed(2),
+        'Volume': ((Math.PI * h / 3) * (r1*r1 + r1*r2 + r2*r2)).toFixed(2),
+      };
+    },
+    formulas: (p) => {
+      const { r1, r2, h } = p;
+      const slantHeight = Math.sqrt(h * h + (r1 - r2) * (r1 - r2));
+      const lateralArea = Math.PI * (r1 + r2) * slantHeight;
+      const baseArea1 = Math.PI * r1 * r1;
+      const baseArea2 = Math.PI * r2 * r2;
+      return [
+        { label: 'Geratriz', formula: '√(h² + (R-r)²)', calc: `√(${h.toFixed(2)}² + (${r1.toFixed(2)}-${r2.toFixed(2)})²) = ${slantHeight.toFixed(2)}` },
+        { label: 'Área lateral', formula: 'π(R+r)g', calc: `π(${r1.toFixed(2)}+${r2.toFixed(2)})·${slantHeight.toFixed(2)} = ${lateralArea.toFixed(2)}` },
+        { label: 'Área total', formula: 'πR² + πr² + π(R+r)g', calc: `${baseArea1.toFixed(2)} + ${baseArea2.toFixed(2)} + ${lateralArea.toFixed(2)} = ${(baseArea1+baseArea2+lateralArea).toFixed(2)}` },
+        { label: 'Volume', formula: '(πh/3)(R²+Rr+r²)', calc: `(π·${h.toFixed(2)}/3)·(${r1.toFixed(2)}²+${r1.toFixed(2)}·${r2.toFixed(2)}+${r2.toFixed(2)}²) = ${((Math.PI*h/3)*(r1*r1+r1*r2+r2*r2)).toFixed(2)}` },
+      ];
+    },
+    createGeometry: (p) => new THREE.CylinderGeometry(p.r2, p.r1, p.h, 32),
+    createPlanification: (p) => createTroncoConePlanification(p.r1, p.r2, p.h),
+  },
 };
 
-const CATEGORY_LABELS = {
-  vestidos: 'Vestidos',
-  trico: 'Tricô',
-  blusas: 'Blusas',
-  acessorios: 'Acessórios',
-  conjuntos: 'Conjuntos',
-};
+// ============================================================
+// 2. FUNÇÕES DE PLANIFICAÇÃO
+// ============================================================
 
-const STORAGE_KEY = 'delicatta_sacola';
-
-/* --------------------------------------------------------------------------
-   Catálogo
-   -------------------------------------------------------------------------- */
-
-let products = [];
-const catalog = new Map();
-let cart = {};
-
-const CLOUD = window.DELICATTA || {};
-const DB_URL = CLOUD.databaseURL || '';
-const CATALOG_PATH = CLOUD.catalogPath || 'catalogo';
-
-function normalizeCatalog(data) {
-  const produtos = Array.isArray(data && data.produtos)
-    ? data.produtos
-        .filter((item) => item && item.id && item.nome && Number(item.preco) > 0)
-        .map((item) => ({
-          id: String(item.id),
-          nome: String(item.nome),
-          categoria: CATEGORY_LABELS[item.categoria] ? item.categoria : 'outros',
-          preco: Number(item.preco),
-          imagem: item.imagem || 'assets/peca-mes.jpg',
-          meta: item.meta || '',
-          tag: item.tag || '',
-          destaque: item.destaque === true,
-        }))
-    : [];
-
-  return { aviso: typeof (data && data.aviso) === 'string' ? data.aviso : '', produtos };
-}
-
-/* O catálogo publicado pelo painel fica no Firebase. Se o banco estiver vazio
-   ou inacessível, o site usa o produtos.json do repositório. */
-async function fetchCloudCatalog() {
-  if (!DB_URL) return null;
-  try {
-    const response = await fetch(`${DB_URL}/${CATALOG_PATH}.json`, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    return data && Array.isArray(data.produtos) ? data : null;
-  } catch (error) {
-    console.warn('Catálogo do Firebase indisponível, usando produtos.json:', error);
-    return null;
-  }
-}
-
-async function loadCatalog() {
-  const cloud = await fetchCloudCatalog();
-  if (cloud) return normalizeCatalog(cloud);
-
-  const response = await fetch('produtos.json', { cache: 'no-store' });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return normalizeCatalog(await response.json());
-}
-
-/* --------------------------------------------------------------------------
-   Utilidades
-   -------------------------------------------------------------------------- */
-
-function money(value) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-function escapeHtml(text) {
-  return String(text).replace(/[&<>"']/g, (char) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[char]));
-}
-
-/* --------------------------------------------------------------------------
-   Elementos
-   -------------------------------------------------------------------------- */
-
-const drawer = document.getElementById('drawer');
-const drawerBody = document.getElementById('drawerBody');
-const drawerFoot = document.getElementById('drawerFoot');
-const drawerTotal = document.getElementById('drawerTotal');
-const drawerClose = document.getElementById('drawerClose');
-const overlay = document.getElementById('overlay');
-const bagBtn = document.getElementById('bagBtn');
-const bagCount = document.getElementById('bagCount');
-const checkoutBtn = document.getElementById('checkoutBtn');
-const clearBtn = document.getElementById('clearBtn');
-const toast = document.getElementById('toast');
-const header = document.getElementById('header');
-const menuBtn = document.getElementById('menuBtn');
-const mobileMenu = document.getElementById('mobileMenu');
-const productsGrid = document.getElementById('products');
-const filtersBox = document.getElementById('filters');
-const announce = document.getElementById('announce');
-const announceText = document.getElementById('announceText');
-
-/* --------------------------------------------------------------------------
-   WhatsApp e Instagram
-   -------------------------------------------------------------------------- */
-
-function whatsappUrl(text) {
-  const base = `https://wa.me/${CONFIG.whatsapp}`;
-  return text ? `${base}?text=${encodeURIComponent(text)}` : base;
-}
-
-document.querySelectorAll('a[href^="https://wa.me/"]').forEach((link) => {
-  link.href = whatsappUrl();
-  link.target = '_blank';
-  link.rel = 'noopener';
-});
-
-document.querySelectorAll('a[href^="https://instagram.com/"]').forEach((link) => {
-  link.href = `https://instagram.com/${CONFIG.instagram}`;
-  link.target = '_blank';
-  link.rel = 'noopener';
-});
-
-/* --------------------------------------------------------------------------
-   Aviso do topo
-   -------------------------------------------------------------------------- */
-
-function renderAnnounce(text) {
-  const aviso = (text || '').trim();
-  if (!aviso) {
-    announce.hidden = true;
-    return;
-  }
-  announce.hidden = false;
-  announceText.textContent = aviso;
-}
-
-/* --------------------------------------------------------------------------
-   Coleção
-   -------------------------------------------------------------------------- */
-
-function renderFilters(list) {
-  const categories = [];
-  list.forEach((item) => {
-    if (item.categoria !== 'outros' && !categories.includes(item.categoria)) categories.push(item.categoria);
+function createCubePlanification(a) {
+  const s = a;
+  const gap = 0.02;
+  const positions = [
+    [0, 0, 0], [s + gap, 0, 0], [s + gap, s + gap, 0],
+    [-(s + gap), 0, 0], [0, s + gap, 0],
+    [0, -(s + gap), 0],
+  ];
+  const group = new THREE.Group();
+  positions.forEach(([x, y, z]) => {
+    const geo = new THREE.PlaneGeometry(s, s);
+    const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, z);
+    group.add(mesh);
   });
-
-  if (!categories.length) {
-    filtersBox.innerHTML = '';
-    return;
-  }
-
-  filtersBox.innerHTML =
-    '<button class="filter is-active" data-filter="todos" type="button">Todas</button>' +
-    categories
-      .map(
-        (category) =>
-          `<button class="filter" data-filter="${category}" type="button">${escapeHtml(
-            CATEGORY_LABELS[category] || category
-          )}</button>`
-      )
-      .join('');
+  return group;
 }
 
-function renderProducts(list) {
-  if (!list.length) {
-    productsGrid.innerHTML =
-      '<p class="products__loading">Nenhuma peça publicada ainda. Volte em breve.</p>';
-    return;
-  }
-
-  productsGrid.innerHTML = list
-    .map(
-      (item) => `
-      <article class="product" data-id="${escapeHtml(item.id)}" data-name="${escapeHtml(item.nome)}" data-price="${item.preco}" data-image="${escapeHtml(item.imagem)}" data-category="${escapeHtml(item.categoria)}">
-        <div class="product__media">
-          <img src="${escapeHtml(item.imagem)}" alt="${escapeHtml(item.nome)}${item.meta ? ' — ' + escapeHtml(item.meta) : ''}" width="800" height="1067" loading="lazy" />
-          ${item.tag ? `<span class="product__tag">${escapeHtml(item.tag)}</span>` : ''}
-          <button class="product__add" type="button" data-add>Adicionar à sacola</button>
-        </div>
-        <div class="product__info">
-          <h3 class="product__name">${escapeHtml(item.nome)}</h3>
-          ${item.meta ? `<p class="product__meta">${escapeHtml(item.meta)}</p>` : ''}
-          <p class="product__price">${money(item.preco)}</p>
-        </div>
-      </article>`
-    )
-    .join('');
+function createParalelepipedoPlanification(a, b, c) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const add = (w, h, x, y) => {
+    const geo = new THREE.PlaneGeometry(w, h);
+    const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(x, y, 0);
+    group.add(mesh);
+  };
+  add(a, b, 0, 0);
+  add(a, b, a + gap, 0);
+  add(a, c, 0, b + gap);
+  add(a, c, 0, -(c + gap));
+  add(b, c, -(b + gap), 0);
+  add(b, c, a + gap, 0);
+  return group;
 }
 
-function renderSpotlight(item) {
-  const section = document.getElementById('spotlight');
-  if (!item) {
-    section.hidden = true;
-    return;
+function createPrismaTriangularPlanification(a, h) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const triShape = (s) => {
+    const shape = new THREE.Shape();
+    const ht = Math.sqrt(3) / 2 * s;
+    shape.moveTo(0, ht * 2/3);
+    shape.lineTo(-s/2, -ht/3);
+    shape.lineTo(s/2, -ht/3);
+    shape.closePath();
+    return shape;
+  };
+  const triGeo = (s) => {
+    const shape = triShape(s);
+    return new THREE.ShapeGeometry(shape);
+  };
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const t1 = new THREE.Mesh(triGeo(a), mat);
+  t1.position.set(0, 0, 0);
+  group.add(t1);
+  const t2 = new THREE.Mesh(triGeo(a), mat);
+  t2.position.set(0, 0, h + gap);
+  group.add(t2);
+  for (let i = 0; i < 3; i++) {
+    const rect = new THREE.Mesh(new THREE.PlaneGeometry(a, h), mat);
+    const angle = (i / 3) * Math.PI * 2;
+    const apothem = a / (2 * Math.sqrt(3));
+    rect.position.set(Math.cos(angle) * apothem, Math.sin(angle) * apothem, h / 2);
+    rect.rotation.z = angle + Math.PI / 2;
+    group.add(rect);
   }
-
-  const image = document.getElementById('spotlightImg');
-  image.src = item.imagem;
-  image.alt = `${item.nome}${item.meta ? ' — ' + item.meta : ''}`;
-  document.getElementById('spotlightName').textContent = item.nome;
-  document.getElementById('spotlightDesc').textContent =
-    item.meta || 'Escolhida à mão para quem gosta de elegância sem esforço.';
-  document.getElementById('spotlightPrice').textContent = money(item.preco);
-
-  const button = document.getElementById('spotlightAdd');
-  button.dataset.id = item.id;
-  button.dataset.name = item.nome;
-  button.dataset.price = item.preco;
-  button.dataset.image = item.imagem;
-
-  section.hidden = false;
+  return group;
 }
 
-/* --------------------------------------------------------------------------
-   Sacola
-   -------------------------------------------------------------------------- */
+function createPrismaHexagonalPlanification(a, h) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const hexGeo = new THREE.CircleGeometry(a, 6);
+  const h1 = new THREE.Mesh(hexGeo, mat);
+  h1.position.set(0, 0, 0);
+  group.add(h1);
+  const h2 = new THREE.Mesh(hexGeo, mat);
+  h2.position.set(0, 0, h + gap);
+  group.add(h2);
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const apothem = a * Math.sqrt(3) / 2;
+    const rect = new THREE.Mesh(new THREE.PlaneGeometry(a, h), mat);
+    rect.position.set(Math.cos(angle) * apothem, Math.sin(angle) * apothem, h / 2);
+    rect.rotation.z = angle + Math.PI / 2;
+    group.add(rect);
+  }
+  return group;
+}
 
-function readCart() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    if (!saved || typeof saved !== 'object') return {};
-    const clean = {};
-    Object.entries(saved).forEach(([id, qty]) => {
-      if (catalog.has(id) && Number(qty) > 0) clean[id] = Math.min(99, Number(qty));
+function createPiramideTriangularPlanification(a, h) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const baseGeo = new THREE.CircleGeometry(a / Math.sqrt(3), 3);
+  const base = new THREE.Mesh(baseGeo, mat);
+  base.rotation.x = -Math.PI / 2;
+  group.add(base);
+  const apothem = a / (2 * Math.sqrt(3));
+  const slantHeight = Math.sqrt(h * h + apothem * apothem);
+  for (let i = 0; i < 3; i++) {
+    const angle = (i / 3) * Math.PI * 2 + Math.PI / 2;
+    const triShape = new THREE.Shape();
+    triShape.moveTo(0, 0);
+    triShape.lineTo(a, 0);
+    triShape.lineTo(a / 2, slantHeight);
+    triShape.closePath();
+    const triGeo = new THREE.ShapeGeometry(triShape);
+    const triMesh = new THREE.Mesh(triGeo, mat);
+    triMesh.position.set(Math.cos(angle) * apothem, 0, Math.sin(angle) * apothem);
+    triMesh.rotation.y = -angle;
+    group.add(triMesh);
+  }
+  return group;
+}
+
+function createPiramideQuadrangularPlanification(a, h) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const baseGeo = new THREE.PlaneGeometry(a, a);
+  const base = new THREE.Mesh(baseGeo, mat);
+  base.rotation.x = -Math.PI / 2;
+  group.add(base);
+  const apothem = a / 2;
+  const slantHeight = Math.sqrt(h * h + apothem * apothem);
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI * 2;
+    const triShape = new THREE.Shape();
+    triShape.moveTo(0, 0);
+    triShape.lineTo(a, 0);
+    triShape.lineTo(a / 2, slantHeight);
+    triShape.closePath();
+    const triGeo = new THREE.ShapeGeometry(triShape);
+    const triMesh = new THREE.Mesh(triGeo, mat);
+    triMesh.position.set(Math.cos(angle) * apothem, 0, Math.sin(angle) * apothem);
+    triMesh.rotation.y = -angle;
+    group.add(triMesh);
+  }
+  return group;
+}
+
+function createPiramidePentagonalPlanification(a, h) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const baseGeo = new THREE.CircleGeometry(a / (2 * Math.sin(Math.PI / 5)), 5);
+  const base = new THREE.Mesh(baseGeo, mat);
+  base.rotation.x = -Math.PI / 2;
+  group.add(base);
+  const apothem = a / (2 * Math.tan(Math.PI / 5));
+  const slantHeight = Math.sqrt(h * h + apothem * apothem);
+  for (let i = 0; i < 5; i++) {
+    const angle = (i / 5) * Math.PI * 2;
+    const triShape = new THREE.Shape();
+    triShape.moveTo(0, 0);
+    triShape.lineTo(a, 0);
+    triShape.lineTo(a / 2, slantHeight);
+    triShape.closePath();
+    const triGeo = new THREE.ShapeGeometry(triShape);
+    const triMesh = new THREE.Mesh(triGeo, mat);
+    triMesh.position.set(Math.cos(angle) * apothem, 0, Math.sin(angle) * apothem);
+    triMesh.rotation.y = -angle;
+    group.add(triMesh);
+  }
+  return group;
+}
+
+function createTetraedroPlanification(a) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const s = a;
+  const h = Math.sqrt(3) / 2 * s;
+  const baseShape = new THREE.Shape();
+  baseShape.moveTo(0, h * 2/3);
+  baseShape.lineTo(-s/2, -h/3);
+  baseShape.lineTo(s/2, -h/3);
+  baseShape.closePath();
+  const baseGeo = new THREE.ShapeGeometry(baseShape);
+  const base = new THREE.Mesh(baseGeo, mat);
+  base.rotation.x = -Math.PI / 2;
+  group.add(base);
+  for (let i = 0; i < 3; i++) {
+    const angle = (i / 3) * Math.PI * 2 + Math.PI / 2;
+    const triShape = new THREE.Shape();
+    triShape.moveTo(0, 0);
+    triShape.lineTo(s, 0);
+    triShape.lineTo(s/2, h);
+    triShape.closePath();
+    const triGeo = new THREE.ShapeGeometry(triShape);
+    const triMesh = new THREE.Mesh(triGeo, mat);
+    triMesh.position.set(Math.cos(angle) * s/3, 0, Math.sin(angle) * s/3);
+    triMesh.rotation.y = -angle;
+    group.add(triMesh);
+  }
+  return group;
+}
+
+function createOctaedroPlanification(a) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const s = a;
+  const h = Math.sqrt(3) / 2 * s;
+  for (let i = 0; i < 4; i++) {
+    const triShape = new THREE.Shape();
+    triShape.moveTo(0, 0);
+    triShape.lineTo(s, 0);
+    triShape.lineTo(s/2, h);
+    triShape.closePath();
+    const triGeo = new THREE.ShapeGeometry(triShape);
+    const triMesh = new THREE.Mesh(triGeo, mat);
+    const angle = (i / 4) * Math.PI * 2;
+    triMesh.position.set(Math.cos(angle) * s/2, 0, Math.sin(angle) * s/2);
+    triMesh.rotation.y = -angle;
+    group.add(triMesh);
+  }
+  for (let i = 0; i < 4; i++) {
+    const triShape = new THREE.Shape();
+    triShape.moveTo(0, 0);
+    triShape.lineTo(s, 0);
+    triShape.lineTo(s/2, -h);
+    triShape.closePath();
+    const triGeo = new THREE.ShapeGeometry(triShape);
+    const triMesh = new THREE.Mesh(triGeo, mat);
+    const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    triMesh.position.set(Math.cos(angle) * s/2, 0, Math.sin(angle) * s/2);
+    triMesh.rotation.y = -angle;
+    group.add(triMesh);
+  }
+  return group;
+}
+
+function createEsferaPlanification(r) {
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const circle = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
+  group.add(circle);
+  const inner = new THREE.Mesh(new THREE.RingGeometry(r * 0.3, r * 0.5, 32), mat);
+  inner.rotation.x = -Math.PI / 2;
+  group.add(inner);
+  return group;
+}
+
+function createCilindroPlanification(r, h) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const circle1 = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
+  circle1.rotation.x = -Math.PI / 2;
+  circle1.position.y = h / 2 + gap;
+  group.add(circle1);
+  const circle2 = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
+  circle2.rotation.x = -Math.PI / 2;
+  circle2.position.y = -h / 2 - gap;
+  group.add(circle2);
+  const rect = new THREE.Mesh(new THREE.PlaneGeometry(2 * Math.PI * r, h), mat);
+  rect.position.y = 0;
+  rect.rotation.x = -Math.PI / 2;
+  group.add(rect);
+  return group;
+}
+
+function createConePlanification(r, h) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const circle = new THREE.Mesh(new THREE.CircleGeometry(r, 32), mat);
+  circle.rotation.x = -Math.PI / 2;
+  group.add(circle);
+  const slantHeight = Math.sqrt(r * r + h * h);
+  const sectorAngle = 2 * Math.PI * r / slantHeight;
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.arc(0, 0, slantHeight, 0, sectorAngle);
+  shape.closePath();
+  const sectorGeo = new THREE.ShapeGeometry(shape);
+  const sector = new THREE.Mesh(sectorGeo, mat);
+  sector.position.y = 0.5;
+  group.add(sector);
+  return group;
+}
+
+function createTroncoConePlanification(r1, r2, h) {
+  const gap = 0.05;
+  const group = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color: '#3b82f6', side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+  const circle1 = new THREE.Mesh(new THREE.CircleGeometry(r1, 32), mat);
+  circle1.rotation.x = -Math.PI / 2;
+  circle1.position.y = h / 2 + gap;
+  group.add(circle1);
+  const circle2 = new THREE.Mesh(new THREE.CircleGeometry(r2, 32), mat);
+  circle2.rotation.x = -Math.PI / 2;
+  circle2.position.y = -h / 2 - gap;
+  group.add(circle2);
+  const slantHeight = Math.sqrt(h * h + (r1 - r2) * (r1 - r2));
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(r2, 0);
+  shape.lineTo(r1, slantHeight);
+  shape.lineTo(0, slantHeight);
+  shape.closePath();
+  const geo = new THREE.ShapeGeometry(shape);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = 0;
+  group.add(mesh);
+  return group;
+}
+
+// ============================================================
+// 3. APLICAÇÃO PRINCIPAL
+// ============================================================
+
+class GeoVisionApp {
+  constructor() {
+    this.container = document.getElementById('canvas-container');
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color('#f5f7fa');
+
+    this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+    this.camera.position.set(4, 3, 6);
+
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.container.appendChild(this.renderer.domElement);
+
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.08;
+    this.controls.autoRotate = true;
+    this.controls.autoRotateSpeed = 1.0;
+    this.controls.enableZoom = true;
+    this.controls.minDistance = 2;
+    this.controls.maxDistance = 20;
+
+    this.labelRenderer = new CSS2DRenderer();
+    this.labelRenderer.setSize(this.container.clientWidth, this.container.clientHeight);
+    this.labelRenderer.domElement.style.position = 'absolute';
+    this.labelRenderer.domElement.style.top = '0';
+    this.labelRenderer.domElement.style.pointerEvents = 'none';
+    this.container.appendChild(this.labelRenderer.domElement);
+
+    // Luzes
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+    this.scene.add(ambient);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(5, 10, 7);
+    dir.castShadow = true;
+    this.scene.add(dir);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+    fill.position.set(-5, 0, 5);
+    this.scene.add(fill);
+
+    // Grade de referência
+    this.gridHelper = new THREE.GridHelper(20, 20, 0xe2e8f0, 0xe2e8f0);
+    this.gridHelper.position.y = -1.5;
+    this.scene.add(this.gridHelper);
+
+    // Estado
+    this.currentFigureKey = 'cube';
+    this.params = { ...FIGURES.cube.params };
+    this.mesh = null;
+    this.planificationMesh = null;
+    this.isPlanified = false;
+    this.planifyProgress = 0;
+    this.planifySpeed = 1.5;
+    this.isAnimating = false;
+    this.animationDirection = 0;
+    this.handRotation = { x: 0, y: 0 };
+    this.gestureDetected = false;
+
+    this.initUI();
+    this.loadFigure('cube');
+    this.animate();
+    this.onResize();
+
+    window.addEventListener('resize', () => this.onResize());
+  }
+
+  initUI() {
+    // Preencher lista de figuras
+    const polyList = document.getElementById('polyhedra-list');
+    const roundList = document.getElementById('round-list');
+    const polyIcons = { cube: 'box', paralelepipedo: 'box', prisma_triangular: 'triangle', prisma_hexagonal: 'hexagon', piramide_triangular: 'pyramid', piramide_quadrangular: 'pyramid', piramide_pentagonal: 'pyramid', tetraedro: 'tetrahedron', octaedro: 'octahedron' };
+    const roundIcons = { esfera: 'circle', cilindro: 'cylinder', cone: 'cone', tronco_cone: 'frustum' };
+
+    Object.entries(FIGURES).forEach(([key, fig]) => {
+      if (fig.type !== 'polyhedron') return;
+      const item = document.createElement('div');
+      item.className = 'figure-item' + (key === this.currentFigureKey ? ' active' : '');
+      item.dataset.key = key;
+      item.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>${fig.name}`;
+      item.addEventListener('click', () => this.loadFigure(key));
+      polyList.appendChild(item);
     });
-    return clean;
-  } catch {
-    return {};
+
+    Object.entries(FIGURES).forEach(([key, fig]) => {
+      if (fig.type !== 'round') return;
+      const item = document.createElement('div');
+      item.className = 'figure-item' + (key === this.currentFigureKey ? ' active' : '');
+      item.dataset.key = key;
+      item.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>${fig.name}`;
+      item.addEventListener('click', () => this.loadFigure(key));
+      roundList.appendChild(item);
+    });
+
+    // Botões
+    document.getElementById('btn-reset-view').addEventListener('click', () => {
+      this.controls.autoRotate = true;
+      this.controls.target.set(0, 0, 0);
+      this.camera.position.set(4, 3, 6);
+      this.controls.update();
+    });
+
+    document.getElementById('btn-presentation').addEventListener('click', () => {
+      document.body.classList.toggle('presentation-mode');
+      setTimeout(() => this.onResize(), 100);
+    });
+
+    // Planificação
+    const planifySlider = document.getElementById('planify-slider');
+    const planifyValue = document.getElementById('planify-value');
+    const speedSlider = document.getElementById('speed-slider');
+    const speedValue = document.getElementById('speed-value');
+
+    planifySlider.addEventListener('input', (e) => {
+      this.planifyProgress = parseFloat(e.target.value);
+      planifyValue.textContent = Math.round(this.planifyProgress * 100) + '%';
+      this.updatePlanification();
+      this.isPlanified = this.planifyProgress > 0;
+      this.controls.autoRotate = !this.isPlanified;
+    });
+
+    speedSlider.addEventListener('input', (e) => {
+      this.planifySpeed = parseFloat(e.target.value);
+      speedValue.textContent = this.planifySpeed.toFixed(1) + 'x';
+    });
+
+    document.getElementById('btn-planify').addEventListener('click', () => {
+      this.startPlanification(1);
+    });
+
+    document.getElementById('btn-remount').addEventListener('click', () => {
+      this.startPlanification(0);
+    });
+
+    // Câmera
+    document.getElementById('btn-camera').addEventListener('click', () => this.openCameraModal());
+    document.getElementById('btn-close-camera').addEventListener('click', () => this.closeCameraModal());
+    document.getElementById('btn-start-camera').addEventListener('click', () => this.startCamera());
+    document.getElementById('btn-stop-camera').addEventListener('click', () => this.stopCamera());
+
+    // Atualizar valor inicial
+    planifyValue.textContent = '0%';
+    speedValue.textContent = '1.5x';
   }
-}
 
-function saveCart() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
-  } catch {
-    /* modo privado: a sacola dura o que durar a visita */
-  }
-}
+  loadFigure(key) {
+    const fig = FIGURES[key];
+    if (!fig) return;
 
-function cartItems() {
-  return Object.entries(cart)
-    .map(([id, qty]) => ({ ...catalog.get(id), qty }))
-    .filter((item) => item && item.nome);
-}
+    this.currentFigureKey = key;
+    this.params = { ...fig.params };
+    this.isPlanified = false;
+    this.planifyProgress = 0;
+    this.controls.autoRotate = true;
 
-function cartTotal() {
-  return cartItems().reduce((sum, item) => sum + item.preco * item.qty, 0);
-}
+    // Atualizar UI
+    document.querySelectorAll('.figure-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.key === key);
+    });
+    document.getElementById('status-figure').textContent = fig.name;
+    document.getElementById('planify-slider').value = 0;
+    document.getElementById('planify-value').textContent = '0%';
 
-function renderCart() {
-  const items = cartItems();
-  const count = items.reduce((sum, item) => sum + item.qty, 0);
-
-  bagCount.textContent = count;
-  bagBtn.setAttribute(
-    'aria-label',
-    count ? `Abrir sacola, ${count} ${count === 1 ? 'peça' : 'peças'}` : 'Abrir sacola, vazia'
-  );
-
-  if (!items.length) {
-    drawerBody.innerHTML = `
-      <p class="empty">
-        <strong>Sua sacola está vazia</strong>
-        Escolha uma peça da coleção e ela aparece aqui.
-      </p>`;
-    drawerFoot.hidden = true;
-    return;
+    this.buildScene();
+    this.updateProperties();
+    this.updateDimensions();
   }
 
-  drawerBody.innerHTML = items
-    .map(
-      (item) => `
-      <div class="cart-item">
-        <img class="cart-item__img" src="${escapeHtml(item.imagem)}" alt="${escapeHtml(item.nome)}" width="72" height="92" loading="lazy" />
-        <div>
-          <p class="cart-item__name">${escapeHtml(item.nome)}</p>
-          <p class="cart-item__meta">${money(item.preco)}</p>
-          <div class="cart-item__qty">
-            <button class="qty-btn" type="button" data-act="dec" data-id="${escapeHtml(item.id)}" aria-label="Diminuir quantidade de ${escapeHtml(item.nome)}">
-              <svg class="icon"><use href="#i-minus"/></svg>
-            </button>
-            <span>${item.qty}</span>
-            <button class="qty-btn" type="button" data-act="inc" data-id="${escapeHtml(item.id)}" aria-label="Aumentar quantidade de ${escapeHtml(item.nome)}">
-              <svg class="icon"><use href="#i-plus"/></svg>
-            </button>
-          </div>
+  buildScene() {
+    const fig = FIGURES[this.currentFigureKey];
+    if (this.mesh) {
+      this.scene.remove(this.mesh);
+      this.mesh.geometry.dispose();
+      this.mesh.material.dispose();
+    }
+
+    const geometry = fig.createGeometry(this.params);
+    const material = new THREE.MeshStandardMaterial({
+      color: '#3b82f6',
+      metalness: 0.1,
+      roughness: 0.35,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+    });
+    this.mesh = new THREE.Mesh(geometry, material);
+    this.mesh.castShadow = true;
+    this.mesh.receiveShadow = true;
+    this.scene.add(this.mesh);
+
+    // Adicionar arestas para poliedros
+    if (fig.type === 'polyhedron') {
+      const edges = new THREE.EdgesGeometry(geometry);
+      const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: '#0b2b4f' }));
+      this.mesh.add(line);
+    }
+
+    // Resetar câmera
+    this.controls.target.set(0, 0, 0);
+    this.camera.position.set(4, 3, 6);
+    this.controls.update();
+  }
+
+  updatePlanification() {
+    const fig = FIGURES[this.currentFigureKey];
+    // Remover planificação anterior
+    if (this.planificationMesh) {
+      this.scene.remove(this.planificationMesh);
+      this.planificationMesh.traverse(child => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) child.material.dispose();
+      });
+      this.planificationMesh = null;
+    }
+
+    if (this.planifyProgress <= 0) {
+      if (this.mesh) this.mesh.visible = true;
+      return;
+    }
+
+    // Esconder malha principal
+    if (this.mesh) this.mesh.visible = false;
+
+    // Criar planificação
+    const planification = fig.createPlanification(this.params);
+    planification.visible = true;
+    planification.position.y = 0;
+    this.planificationMesh = planification;
+    this.scene.add(planification);
+
+    // Ajustar opacidade baseada no progresso
+    planification.traverse(child => {
+      if (child.material) {
+        child.material.opacity = 0.5 + 0.35 * this.planifyProgress;
+      }
+    });
+  }
+
+  startPlanification(target) {
+    this.isAnimating = true;
+    this.animationDirection = target > this.planifyProgress ? 1 : -1;
+    this.animationTarget = target;
+    this.controls.autoRotate = false;
+  }
+
+  updateProperties() {
+    const fig = FIGURES[this.currentFigureKey];
+    const props = fig.properties(this.params);
+    const container = document.getElementById('properties-container');
+    container.innerHTML = Object.entries(props).map(([key, val]) =>
+      `<div class="property-row"><span class="property-label">${key}</span><span class="property-value">${val}</span></div>`
+    ).join('');
+
+    // Fórmulas
+    const formulas = fig.formulas(this.params);
+    const formulaContainer = document.createElement('div');
+    formulaContainer.style.marginTop = '8px';
+    formulaContainer.innerHTML = formulas.map(f =>
+      `<div class="property-row" style="flex-direction:column;align-items:flex-start;padding:4px 0;">
+        <div style="display:flex;justify-content:space-between;width:100%;">
+          <span class="property-label">${f.label}</span>
+          <span class="property-formula">${f.formula}</span>
         </div>
-        <div class="cart-item__side">
-          <strong>${money(item.preco * item.qty)}</strong>
-          <button class="cart-item__remove" type="button" data-act="remove" data-id="${escapeHtml(item.id)}">Remover</button>
-        </div>
+        <div class="property-formula" style="font-size:11px;color:#64748b;margin-top:1px;">${f.calc}</div>
       </div>`
-    )
-    .join('');
-
-  const total = cartTotal();
-  drawerTotal.textContent = money(total);
-  drawerFoot.hidden = false;
-
-  const lines = items
-    .map((item) => `• ${item.nome} — ${item.qty} un. — ${money(item.preco * item.qty)}`)
-    .join('\n');
-
-  checkoutBtn.href = whatsappUrl(
-    `Olá! Vim pelo site da Delicatta Cristã e quero fazer este pedido:\n\n${lines}\n\nTotal: ${money(total)}\n\nPode me ajudar com tamanho e frete?`
-  );
-}
-
-function toastMessage(message) {
-  toast.textContent = message;
-  toast.classList.add('is-visible');
-  clearTimeout(toastMessage.timer);
-  toastMessage.timer = setTimeout(() => toast.classList.remove('is-visible'), 2600);
-}
-
-function addToCart(id) {
-  if (!catalog.has(id)) return;
-  cart[id] = (cart[id] || 0) + 1;
-  saveCart();
-  renderCart();
-  toastMessage(`${catalog.get(id).nome} foi para a sacola`);
-  openCart();
-}
-
-function changeQty(id, delta) {
-  if (!cart[id]) return;
-  cart[id] += delta;
-  if (cart[id] <= 0) delete cart[id];
-  if (cart[id] > 99) cart[id] = 99;
-  saveCart();
-  renderCart();
-}
-
-function openCart() {
-  renderCart();
-  drawer.classList.add('is-open');
-  drawer.setAttribute('aria-hidden', 'false');
-  overlay.hidden = false;
-  requestAnimationFrame(() => overlay.classList.add('is-visible'));
-  document.body.classList.add('no-scroll');
-  drawerClose.focus({ preventScroll: true });
-}
-
-function closeCart() {
-  drawer.classList.remove('is-open');
-  drawer.setAttribute('aria-hidden', 'true');
-  overlay.classList.remove('is-visible');
-  document.body.classList.remove('no-scroll');
-  setTimeout(() => {
-    if (!drawer.classList.contains('is-open')) overlay.hidden = true;
-  }, 400);
-  bagBtn.focus({ preventScroll: true });
-}
-
-/* --------------------------------------------------------------------------
-   Eventos
-   -------------------------------------------------------------------------- */
-
-document.addEventListener('click', (event) => {
-  const addButton = event.target.closest('[data-add]');
-  if (addButton) {
-    const source = addButton.closest('.product') || addButton;
-    addToCart(source.dataset.id);
-    return;
+    ).join('');
+    container.appendChild(formulaContainer);
   }
 
-  const action = event.target.closest('[data-act]');
-  if (action) {
-    const { act, id } = action.dataset;
-    if (act === 'inc') changeQty(id, 1);
-    if (act === 'dec') changeQty(id, -1);
-    if (act === 'remove') {
-      delete cart[id];
-      saveCart();
-      renderCart();
+  updateDimensions() {
+    const fig = FIGURES[this.currentFigureKey];
+    const container = document.getElementById('dimensions-container');
+    container.innerHTML = '';
+
+    fig.paramDefs.forEach(def => {
+      const row = document.createElement('div');
+      row.className = 'dimension-row';
+      row.innerHTML = `
+        <span class="dimension-label">${def.label}</span>
+        <input type="number" class="dimension-input" data-key="${def.key}" value="${this.params[def.key].toFixed(1)}" min="${def.min}" max="${def.max}" step="${def.step}">
+      `;
+      const input = row.querySelector('input');
+      input.addEventListener('change', (e) => {
+        let val = parseFloat(e.target.value);
+        if (isNaN(val)) val = def.min;
+        val = Math.max(def.min, Math.min(def.max, val));
+        e.target.value = val.toFixed(1);
+        this.params[def.key] = val;
+        this.buildScene();
+        this.updateProperties();
+        if (this.isPlanified) {
+          this.updatePlanification();
+        }
+      });
+      container.appendChild(row);
+    });
+  }
+
+  onResize() {
+    const w = this.container.clientWidth;
+    const h = this.container.clientHeight;
+    if (w === 0 || h === 0) return;
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h);
+    this.labelRenderer.setSize(w, h);
+  }
+
+  animate() {
+    requestAnimationFrame(() => this.animate());
+
+    // Animação de planificação
+    if (this.isAnimating) {
+      const step = 0.02 * this.planifySpeed;
+      this.planifyProgress += this.animationDirection * step;
+      if (this.animationDirection > 0) {
+        this.planifyProgress = Math.min(this.planifyProgress, this.animationTarget);
+        if (this.planifyProgress >= this.animationTarget) this.isAnimating = false;
+      } else {
+        this.planifyProgress = Math.max(this.planifyProgress, this.animationTarget);
+        if (this.planifyProgress <= this.animationTarget) this.isAnimating = false;
+      }
+      document.getElementById('planify-slider').value = this.planifyProgress;
+      document.getElementById('planify-value').textContent = Math.round(this.planifyProgress * 100) + '%';
+      this.updatePlanification();
+      this.isPlanified = this.planifyProgress > 0.01;
+    }
+
+    // Rotação por gestos
+    if (this.mesh && this.gestureDetected) {
+      this.mesh.rotation.y += this.handRotation.x * 0.03;
+      this.mesh.rotation.x += this.handRotation.y * 0.03;
+    }
+
+    if (this.planificationMesh) {
+      this.planificationMesh.rotation.y += 0.002;
+    }
+
+    this.controls.update();
+    this.renderer.render(this.scene, this.camera);
+    this.labelRenderer.render(this.scene, this.camera);
+  }
+
+  // ============================================================
+  // CÂMERA E MEDIAPIPE
+  // ============================================================
+
+  openCameraModal() {
+    document.getElementById('camera-modal').classList.add('active');
+  }
+
+  closeCameraModal() {
+    document.getElementById('camera-modal').classList.remove('active');
+  }
+
+  async startCamera() {
+    const statusEl = document.getElementById('camera-status');
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('gesture-canvas');
+
+    try {
+      statusEl.innerHTML = '<div class="spinner"></div> Inicializando câmera...';
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+      video.srcObject = stream;
+      await video.play();
+
+      // Configurar MediaPipe Hands
+      const hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${file}`,
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7,
+      });
+
+      const camera = new Camera(video, {
+        onFrame: async () => {
+          await hands.send({ image: video });
+        },
+        width: 640,
+        height: 480,
+      });
+      camera.start();
+
+      hands.onResults((results) => {
+        const ctx = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+          const landmarks = results.multiHandLandmarks[0];
+
+          // Desenhar landmarks
+          ctx.fillStyle = '#3b82f6';
+          ctx.strokeStyle = '#1e4b7a';
+          ctx.lineWidth = 2;
+          for (let i = 0; i < landmarks.length; i++) {
+            const lm = landmarks[i];
+            const x = lm.x * canvas.width;
+            const y = lm.y * canvas.height;
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          // Conexões
+          const connections = [
+            [0,1],[1,2],[2,3],[3,4],
+            [0,5],[5,6],[6,7],[7,8],
+            [5,9],[9,10],[10,11],[11,12],
+            [9,13],[13,14],[14,15],[15,16],
+            [13,17],[17,18],[18,19],[19,20],
+            [0,17]
+          ];
+          ctx.beginPath();
+          connections.forEach(([a, b]) => {
+            const p1 = landmarks[a];
+            const p2 = landmarks[b];
+            ctx.moveTo(p1.x * canvas.width, p1.y * canvas.height);
+            ctx.lineTo(p2.x * canvas.width, p2.y * canvas.height);
+          });
+          ctx.stroke();
+
+          // Rotação baseada na posição do pulso
+          const wrist = landmarks[0];
+          const middleMcp = landmarks[9];
+          this.handRotation.x = (wrist.x - 0.5) * 2;
+          this.handRotation.y = (wrist.y - 0.5) * 2;
+          this.gestureDetected = true;
+
+          // Pinça (polegar + indicador)
+          const thumbTip = landmarks[4];
+          const indexTip = landmarks[8];
+          const dist = Math.sqrt(
+            Math.pow(thumbTip.x - indexTip.x, 2) +
+            Math.pow(thumbTip.y - indexTip.y, 2)
+          );
+          if (dist < 0.05) {
+            // Gesto de pinça: destacar figura
+            if (this.mesh) {
+              this.mesh.material.color.set('#60a5fa');
+            }
+          } else {
+            if (this.mesh) {
+              this.mesh.material.color.set('#3b82f6');
+            }
+          }
+
+          statusEl.innerHTML = '<span class="status-dot" style="background:#22c55e;"></span> Mão detectada — mova para rotacionar';
+        } else {
+          this.gestureDetected = false;
+          statusEl.innerHTML = '<span class="status-dot off"></span> Mão não visível';
+        }
+      });
+
+      this.hands = hands;
+      this.camera = camera;
+
+      statusEl.innerHTML = '<span class="status-dot" style="background:#22c55e;"></span> Câmera ativa — aguardando mão';
+      document.getElementById('btn-start-camera').disabled = true;
+      document.getElementById('status-camera').className = 'status-dot';
+      document.getElementById('status-camera').style.background = '#22c55e';
+
+    } catch (err) {
+      console.error('Erro na câmera:', err);
+      statusEl.innerHTML = `<span class="status-dot" style="background:#dc2626;"></span> Erro: ${err.message || 'Permissão negada'}`;
     }
   }
-});
 
-filtersBox.addEventListener('click', (event) => {
-  const button = event.target.closest('.filter');
-  if (!button) return;
-
-  filtersBox.querySelectorAll('.filter').forEach((item) => item.classList.remove('is-active'));
-  button.classList.add('is-active');
-
-  const filter = button.dataset.filter;
-  productsGrid.querySelectorAll('.product').forEach((card) => {
-    const show = filter === 'todos' || card.dataset.category === filter;
-    card.classList.toggle('is-hidden', !show);
-  });
-});
-
-bagBtn.addEventListener('click', openCart);
-drawerClose.addEventListener('click', closeCart);
-overlay.addEventListener('click', closeCart);
-clearBtn.addEventListener('click', () => {
-  cart = {};
-  saveCart();
-  renderCart();
-  toastMessage('Sacola esvaziada');
-});
-
-document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
-  if (drawer.classList.contains('is-open')) closeCart();
-  if (mobileMenu.classList.contains('is-open')) toggleMenu(false);
-});
-
-/* --------------------------------------------------------------------------
-   Menu mobile
-   -------------------------------------------------------------------------- */
-
-function toggleMenu(force) {
-  const open = typeof force === 'boolean' ? force : !mobileMenu.classList.contains('is-open');
-  mobileMenu.classList.toggle('is-open', open);
-  mobileMenu.setAttribute('aria-hidden', String(!open));
-  menuBtn.setAttribute('aria-expanded', String(open));
-  menuBtn.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
-  menuBtn.querySelector('use').setAttribute('href', open ? '#i-close' : '#i-menu');
-  document.body.classList.toggle('no-scroll', open || drawer.classList.contains('is-open'));
-}
-
-menuBtn.addEventListener('click', () => toggleMenu());
-mobileMenu.querySelectorAll('a').forEach((link) => {
-  link.addEventListener('click', () => toggleMenu(false));
-});
-
-/* --------------------------------------------------------------------------
-   Header ao rolar
-   -------------------------------------------------------------------------- */
-
-function onScroll() {
-  header.classList.toggle('is-scrolled', window.scrollY > 12);
-}
-
-window.addEventListener('scroll', onScroll, { passive: true });
-onScroll();
-
-/* --------------------------------------------------------------------------
-   Animações de entrada
-   -------------------------------------------------------------------------- */
-
-function observeReveals() {
-  const targets = document.querySelectorAll('.reveal');
-  if (!('IntersectionObserver' in window)) {
-    targets.forEach((target) => target.classList.add('in'));
-    return;
+  stopCamera() {
+    if (this.camera) {
+      this.camera.stop();
+      this.camera = null;
+    }
+    if (this.hands) {
+      this.hands.close();
+      this.hands = null;
+    }
+    const video = document.getElementById('webcam');
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+      video.srcObject = null;
+    }
+    this.gestureDetected = false;
+    document.getElementById('camera-status').innerHTML = '<span class="status-dot off"></span> Câmera desligada';
+    document.getElementById('btn-start-camera').disabled = false;
+    document.getElementById('status-camera').className = 'status-dot off';
+    document.getElementById('status-camera').style.background = '';
+    document.getElementById('gesture-canvas').getContext('2d').clearRect(0, 0, 999, 999);
   }
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('in');
-        observer.unobserve(entry.target);
-      });
-    },
-    { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }
-  );
-
-  targets.forEach((target) => observer.observe(target));
 }
 
-/* --------------------------------------------------------------------------
-   Inicialização
-   -------------------------------------------------------------------------- */
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
 
-async function init() {
-  observeReveals();
-  document.getElementById('year').textContent = new Date().getFullYear();
+import { Hands } from '@mediapipe/hands';
+import { Camera } from '@mediapipe/camera_utils';
 
-  try {
-    const data = await loadCatalog();
-    products = data.produtos;
-    products.forEach((item) => catalog.set(item.id, item));
+document.addEventListener('DOMContentLoaded', () => {
+  // Esconder loading após um pequeno delay
+  setTimeout(() => {
+    document.getElementById('loading-overlay').style.display = 'none';
+  }, 600);
 
-    renderAnnounce(data.aviso);
-    renderFilters(products);
-    renderProducts(products);
-    renderSpotlight(products.find((item) => item.destaque));
-  } catch (error) {
-    announce.hidden = true;
-    productsGrid.innerHTML =
-      '<p class="products__loading">Não foi possível carregar a coleção agora. Recarregue a página em instantes.</p>';
-    filtersBox.innerHTML = '';
-    console.error('Falha ao carregar produtos.json:', error);
-  }
-
-  cart = readCart();
-  renderCart();
-}
-
-init();
+  window.app = new GeoVisionApp();
+});
