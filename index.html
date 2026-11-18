@@ -1,367 +1,729 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Delicatta Cristã · Roupas delicadas com propósito</title>
-  <meta name="description" content="Delicatta Cristã: roupas delicadas em tons de linho, tricô e cetim. Peças leves e atemporais, feitas em pequena produção." />
-  <meta name="theme-color" content="#FBF8F3" />
-  <meta property="og:title" content="Delicatta Cristã · Roupas delicadas com propósito" />
-  <meta property="og:description" content="Peças leves, tons de linho e caimento suave para vestir a fé em cada detalhe." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="assets/peca-mes.jpg" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F4ECE1'/%3E%3Ctext x='32' y='45' font-family='Georgia,serif' font-size='36' text-anchor='middle' fill='%233A3229'%3ED%3C/text%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoVision 3D — Laboratório de Geometria Espacial</title>
+  <!-- Three.js, Drei, MediaPipe -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/",
+        "@mediapipe/hands": "https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js",
+        "@mediapipe/camera_utils": "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js"
+      }
+    }
+  </script>
+  <style>
+    /* ===== RESET & GLOBAL ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f5f7fa;
+      color: #1e293b;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== CORES INSTITUCIONAIS ===== */
+    :root {
+      --azul-profundo: #0b2b4f;
+      --azul-medio: #1e4b7a;
+      --azul-claro: #3b82f6;
+      --azul-destaque: #60a5fa;
+      --cinza-fundo: #f5f7fa;
+      --cinza-borda: #e2e8f0;
+      --cinza-texto: #64748b;
+      --branco: #ffffff;
+      --sombra: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      background: var(--branco);
+      border-bottom: 1px solid var(--cinza-borda);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: var(--sombra);
+      z-index: 10;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 18px;
+      color: var(--azul-profundo);
+      letter-spacing: -0.3px;
+    }
+
+    .logo svg {
+      width: 28px;
+      height: 28px;
+      color: var(--azul-claro);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .btn {
+      border: none;
+      background: transparent;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      color: var(--azul-profundo);
+      border: 1px solid transparent;
+    }
+
+    .btn:hover {
+      background: #f1f5f9;
+    }
+
+    .btn-primary {
+      background: var(--azul-claro);
+      color: white;
+      border-color: var(--azul-claro);
+    }
+
+    .btn-primary:hover {
+      background: var(--azul-medio);
+      border-color: var(--azul-medio);
+    }
+
+    .btn-outline {
+      border: 1px solid var(--cinza-borda);
+    }
+
+    .btn-outline:hover {
+      background: #f8fafc;
+    }
+
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .btn-danger {
+      color: #dc2626;
+      border-color: #fecaca;
+    }
+
+    .btn-danger:hover {
+      background: #fef2f2;
+    }
+
+    /* ===== LAYOUT PRINCIPAL ===== */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ===== SIDEBAR ESQUERDA ===== */
+    .sidebar-left {
+      width: 220px;
+      background: var(--branco);
+      border-right: 1px solid var(--cinza-borda);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      padding: 16px 14px;
+      border-bottom: 1px solid var(--cinza-borda);
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cinza-texto);
+      margin-bottom: 10px;
+    }
+
+    .figure-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .figure-item {
+      padding: 8px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.1s;
+      color: #334155;
+    }
+
+    .figure-item:hover {
+      background: #f1f5f9;
+    }
+
+    .figure-item.active {
+      background: #eff6ff;
+      color: var(--azul-claro);
+      font-weight: 500;
+    }
+
+    .figure-item svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+    }
+
+    .figure-item.active svg {
+      opacity: 1;
+      color: var(--azul-claro);
+    }
+
+    /* ===== ÁREA CENTRAL 3D ===== */
+    .viewport {
+      flex: 1;
+      position: relative;
+      background: var(--cinza-fundo);
+      overflow: hidden;
+    }
+
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ===== SIDEBAR DIREITA ===== */
+    .sidebar-right {
+      width: 300px;
+      background: var(--branco);
+      border-left: 1px solid var(--cinza-borda);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .panel-section {
+      padding: 16px 16px;
+      border-bottom: 1px solid var(--cinza-borda);
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--azul-profundo);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-title svg {
+      width: 16px;
+      height: 16px;
+      color: var(--azul-claro);
+    }
+
+    .dimension-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .dimension-label {
+      font-size: 13px;
+      color: #475569;
+    }
+
+    .dimension-input {
+      width: 80px;
+      padding: 6px 8px;
+      border: 1px solid var(--cinza-borda);
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--azul-profundo);
+      text-align: right;
+      background: #fafbfc;
+    }
+
+    .dimension-input:focus {
+      outline: none;
+      border-color: var(--azul-claro);
+      background: white;
+    }
+
+    .property-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+
+    .property-label {
+      color: var(--cinza-texto);
+    }
+
+    .property-value {
+      font-weight: 500;
+      color: var(--azul-profundo);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .property-formula {
+      font-size: 11px;
+      color: #94a3b8;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      margin-top: 2px;
+    }
+
+    /* ===== CONTROLES DE PLANIFICAÇÃO ===== */
+    .planify-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      background: var(--cinza-borda);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--azul-claro);
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+      justify-content: center;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+
+    /* ===== STATUS BAR ===== */
+    .status-bar {
+      height: 32px;
+      background: var(--branco);
+      border-top: 1px solid var(--cinza-borda);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      font-size: 12px;
+      color: var(--cinza-texto);
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+
+    .status-dot.off {
+      background: #94a3b8;
+    }
+
+    /* ===== MODAL DA CÂMERA ===== */
+    .camera-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .camera-modal.active {
+      display: flex;
+    }
+
+    .camera-container {
+      background: white;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 720px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .camera-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--cinza-borda);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .camera-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--azul-profundo);
+    }
+
+    .camera-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .camera-feed {
+      width: 100%;
+      aspect-ratio: 4/3;
+      background: #0f172a;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .camera-feed video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transform: scaleX(-1);
+    }
+
+    .camera-feed canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform: scaleX(-1);
+    }
+
+    .camera-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--cinza-texto);
+    }
+
+    .camera-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--cinza-borda);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .gesture-info {
+      background: #f8fafc;
+      border: 1px solid var(--cinza-borda);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 12px;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    .gesture-info strong {
+      color: var(--azul-profundo);
+    }
+
+    /* ===== MODO APRESENTAÇÃO ===== */
+    .presentation-mode .sidebar-left,
+    .presentation-mode .sidebar-right,
+    .presentation-mode .status-bar {
+      display: none;
+    }
+
+    .presentation-mode .viewport {
+      background: white;
+    }
+
+    /* ===== LOADING ===== */
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(245,247,250,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      font-size: 13px;
+      color: var(--cinza-texto);
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--cinza-borda);
+      border-top-color: var(--azul-claro);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* ===== RESPONSIVO ===== */
+    @media (max-width: 1024px) {
+      .sidebar-right { width: 260px; }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar-left { display: none; }
+      .sidebar-right { display: none; }
+      .header { padding: 0 12px; }
+    }
+  </style>
 </head>
 <body>
-  <svg class="sprite" aria-hidden="true" focusable="false">
-    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 8h12l1 12H5L6 8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></symbol>
-    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
-    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
-    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
-    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
-    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
-    <symbol id="i-whats" viewBox="0 0 24 24"><path d="M20.6 11.7a8.6 8.6 0 0 1-12.7 7.6l-4.4 1.2 1.2-4.3A8.6 8.6 0 1 1 20.6 11.7Z"/><path d="M8.9 8.4c.3-.1.7 0 .9.3l.7 1.3c.1.3.1.6-.1.8l-.5.5c.5 1 1.3 1.8 2.3 2.3l.5-.5c.2-.2.5-.2.8-.1l1.3.7c.3.2.4.5.3.9-.2.6-.8 1.1-1.5 1.1-2.7 0-4.9-2.2-4.9-4.9 0-.7.5-1.3 1.1-1.5Z"/></symbol>
-    <symbol id="i-insta" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="5"/><circle cx="12" cy="12" r="3.6"/><circle cx="16.9" cy="7.1" r=".9"/></symbol>
-    <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 7h10v9H3zM13 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></symbol>
-    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M6 18c0-7 5-12 13-12 0 8-5 13-13 12Z"/><path d="M6 18c2-4 5-7 9-9"/></symbol>
-    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-9.1A4 4 0 0 1 12 8a4 4 0 0 1 7 2.9C19 15.6 12 20 12 20Z"/></symbol>
-  </svg>
-
-  <a class="skip" href="#colecao">Ir para a coleção</a>
-
-  <div class="announce" id="announce">
-    <p id="announceText">Peças em pequena produção · Feito à mão</p>
-  </div>
-
-  <header class="header" id="header">
-    <div class="header__inner">
-      <a class="brand" href="#topo" aria-label="Delicatta Cristã, página inicial">
-        <span class="brand__mark">D</span>
-        <span class="brand__text">
-          <span class="brand__name">Delicatta</span>
-          <span class="brand__sub">Cristã</span>
-        </span>
-      </a>
-
-      <nav class="nav" aria-label="Navegação principal">
-        <a href="#colecao">Coleção</a>
-        <a href="#essencia">Nossa essência</a>
-        <a href="#depoimentos">Depoimentos</a>
-        <a href="#duvidas">Dúvidas</a>
-      </nav>
-
-      <div class="header__actions">
-        <a class="header__link" href="#duvidas">Atendimento</a>
-        <button class="bag-btn" id="bagBtn" type="button" aria-label="Abrir sacola">
-          <svg class="icon"><use href="#i-bag"/></svg>
-          <span>Sacola</span>
-          <span class="bag-btn__count" id="bagCount" aria-live="polite">0</span>
-        </button>
-        <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileMenu">
-          <svg class="icon"><use href="#i-menu"/></svg>
-        </button>
-      </div>
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+      GeoVision 3D
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" id="btn-camera">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        Câmera
+      </button>
+      <button class="btn btn-outline" id="btn-presentation">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        Apresentação
+      </button>
+      <button class="btn btn-primary" id="btn-reset-view">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Resetar
+      </button>
     </div>
   </header>
 
-  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
-    <a href="#colecao">Coleção</a>
-    <a href="#essencia">Nossa essência</a>
-    <a href="#depoimentos">Depoimentos</a>
-    <a href="#duvidas">Dúvidas</a>
-    <a class="mobile-menu__cta" href="https://wa.me/5586998174869" target="_blank" rel="noopener">Falar no WhatsApp</a>
+  <!-- ===== MAIN ===== -->
+  <div class="main">
+    <!-- SIDEBAR ESQUERDA -->
+    <aside class="sidebar-left">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Poliedros</div>
+        <div class="figure-list" id="polyhedra-list">
+          <!-- preenchido via JS -->
+        </div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title">Corpos Redondos</div>
+        <div class="figure-list" id="round-list">
+          <!-- preenchido via JS -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- VIEWPORT 3D -->
+    <div class="viewport" id="viewport">
+      <div id="canvas-container"></div>
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        Carregando geometria...
+      </div>
+    </div>
+
+    <!-- SIDEBAR DIREITA -->
+    <aside class="sidebar-right">
+      <!-- Propriedades -->
+      <div class="panel-section">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          Propriedades
+        </div>
+        <div id="properties-container">
+          <!-- preenchido via JS -->
+        </div>
+      </div>
+
+      <!-- Dimensões -->
+      <div class="panel-section">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 3H3v18h18V3z"/>
+            <path d="M9 3v18"/>
+            <path d="M3 9h18"/>
+          </svg>
+          Dimensões
+        </div>
+        <div id="dimensions-container">
+          <!-- preenchido via JS -->
+        </div>
+      </div>
+
+      <!-- Planificação -->
+      <div class="panel-section">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          Planificação
+        </div>
+        <div class="planify-controls">
+          <div class="slider-row">
+            <span style="font-size:12px;color:var(--cinza-texto);min-width:40px;">Abertura</span>
+            <input type="range" id="planify-slider" min="0" max="1" step="0.01" value="0">
+            <span id="planify-value" style="font-size:12px;color:var(--azul-profundo);min-width:32px;text-align:right;">0%</span>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" id="btn-planify">Planificar</button>
+            <button class="btn btn-outline btn-sm" id="btn-remount">Remontar</button>
+          </div>
+          <div class="slider-row">
+            <span style="font-size:12px;color:var(--cinza-texto);min-width:40px;">Velocidade</span>
+            <input type="range" id="speed-slider" min="0.5" max="3" step="0.1" value="1.5">
+            <span id="speed-value" style="font-size:12px;color:var(--azul-profundo);min-width:32px;text-align:right;">1.5x</span>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <main id="topo">
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero__text reveal">
-        <p class="eyebrow">Nova coleção · 2026</p>
-        <h1>Delicadeza<br /><em>que veste a fé</em></h1>
-        <p class="hero__lead">
-          Peças leves, tons de linho e caimento suave — para acompanhar você no dia a dia,
-          no culto e nos momentos que merecem cuidado.
-        </p>
-        <div class="hero__actions">
-          <a class="btn btn--dark" href="#colecao">
-            Ver coleção
-            <svg class="icon"><use href="#i-arrow"/></svg>
-          </a>
-          <a class="btn btn--ghost" href="https://wa.me/5586998174869" target="_blank" rel="noopener">
-            <svg class="icon"><use href="#i-whats"/></svg>
-            Falar no WhatsApp
-          </a>
-        </div>
-        <ul class="hero__notes">
-          <li><svg class="icon"><use href="#i-check"/></svg> Frete grátis acima de R$ 299</li>
-          <li><svg class="icon"><use href="#i-check"/></svg> Troca em até 7 dias</li>
-        </ul>
+  <!-- ===== STATUS BAR ===== -->
+  <div class="status-bar">
+    <div class="status-item">
+      <span class="status-dot" id="status-webgl"></span>
+      WebGL ativo
+    </div>
+    <div class="status-item">
+      <span class="status-dot off" id="status-camera"></span>
+      Câmera desligada
+    </div>
+    <div class="status-item" id="status-fps">— FPS</div>
+    <div class="status-item" style="margin-left:auto;" id="status-figure">Cubo</div>
+  </div>
+
+  <!-- ===== MODAL CÂMERA ===== -->
+  <div class="camera-modal" id="camera-modal">
+    <div class="camera-container">
+      <div class="camera-header">
+        <h3>Controle por Gestos</h3>
+        <button class="btn btn-outline btn-sm" id="btn-close-camera">Fechar</button>
       </div>
-
-      <div class="hero__media reveal">
-        <figure class="arch">
-          <img src="assets/hero.jpg" alt="Mulher vestindo conjunto de linho cru com caimento leve" width="1100" height="1375" fetchpriority="high" />
-        </figure>
-        <div class="hero__card">
-          <p class="hero__card-quote">“A força e a dignidade são os seus vestidos.”</p>
-          <p class="hero__card-ref">Provérbios 31:25</p>
+      <div class="camera-body">
+        <div class="camera-feed" id="camera-feed">
+          <video id="webcam" autoplay playsinline></video>
+          <canvas id="gesture-canvas"></canvas>
         </div>
-      </div>
-    </section>
-
-    <!-- Versículo -->
-    <section class="verse" aria-label="Versículo">
-      <p class="verse__text">Vestir-se bem é um gesto de cuidado com quem você é por dentro.</p>
-      <p class="verse__ref">Delicatta Cristã</p>
-    </section>
-
-    <!-- Coleção -->
-    <section class="section" id="colecao">
-      <div class="section__head">
-        <div>
-          <p class="eyebrow">A coleção</p>
-          <h2 class="section__title">Peças para o dia a dia</h2>
-          <p class="section__lead">Tecidos naturais, modelagem delicada e tons que combinam entre si.</p>
+        <div class="camera-status" id="camera-status">
+          <span class="status-dot off"></span>
+          Aguardando permissão da câmera...
         </div>
-        <div class="filters" id="filters" role="group" aria-label="Filtrar por categoria">
-          <button class="filter is-active" data-filter="todos" type="button">Todas</button>
-          <button class="filter" data-filter="vestidos" type="button">Vestidos</button>
-          <button class="filter" data-filter="trico" type="button">Tricô</button>
-          <button class="filter" data-filter="blusas" type="button">Blusas</button>
+        <div class="gesture-info">
+          <strong>Rotacionar:</strong> mova a mão para a esquerda/direita.<br>
+          <strong>Zoom:</strong> aproxime/afaste a mão da câmera.<br>
+          <strong>Selecionar:</strong> gesto de pinça (polegar + indicador).
         </div>
       </div>
-
-      <div class="products" id="products">
-        <p class="products__loading">Carregando a coleção…</p>
-      </div>
-
-      <p class="products__note">
-        Não achou seu tamanho? <a href="https://wa.me/5586998174869" target="_blank" rel="noopener">Fale com a gente</a> — trabalhamos com encomendas.
-      </p>
-    </section>
-
-    <!-- Peça do mês -->
-    <section class="section section--sand spotlight" id="spotlight" hidden>
-      <div class="spotlight__media reveal">
-        <img id="spotlightImg" src="assets/peca-mes.jpg" alt="" width="1000" height="1500" loading="lazy" />
-      </div>
-      <div class="spotlight__text reveal">
-        <p class="eyebrow">Peça do mês</p>
-        <h2 class="section__title" id="spotlightName">Vestido Cetim Nuvem</h2>
-        <p id="spotlightDesc">Escolhida à mão para quem gosta de elegância sem esforço.</p>
-        <ul class="ticks">
-          <li><svg class="icon"><use href="#i-check"/></svg> Peça em pequena produção</li>
-          <li><svg class="icon"><use href="#i-check"/></svg> Modelagem confortável e atemporal</li>
-          <li><svg class="icon"><use href="#i-check"/></svg> Combina com outras peças da coleção</li>
-        </ul>
-        <div class="spotlight__buy">
-          <span class="spotlight__price" id="spotlightPrice">R$ 0,00</span>
-          <button class="btn btn--dark" type="button" data-add id="spotlightAdd">
-            Quero essa peça
-            <svg class="icon"><use href="#i-arrow"/></svg>
-          </button>
-        </div>
-        <p class="spotlight__note">Parcelamos em até 3x sem juros · Pix com 5% de desconto</p>
-      </div>
-    </section>
-
-    <!-- Essência -->
-    <section class="section essence" id="essencia">
-      <div class="essence__text reveal">
-        <p class="eyebrow">Nossa essência</p>
-        <h2 class="section__title">Uma marca feita com calma</h2>
-        <p>
-          A Delicatta nasceu de um desejo simples: vestir a mulher cristã com delicadeza.
-          Sem excessos, sem pressa — escolhendo tecidos que respiram, modelagens que respeitam
-          o corpo e tons que atravessam estações.
-        </p>
-        <p>
-          Cada peça é comprada em pequena quantidade, conferida uma a uma e embalada à mão,
-          com um cartão escrito por nós. Acreditamos que o cuidado com o detalhe também é uma
-          forma de servir.
-        </p>
-        <div class="pillars">
-          <div class="pillar">
-            <svg class="icon"><use href="#i-leaf"/></svg>
-            <h3>Tecidos naturais</h3>
-            <p>Linho, algodão e tricô de toque macio, escolhidos pelo caimento.</p>
-          </div>
-          <div class="pillar">
-            <svg class="icon"><use href="#i-heart"/></svg>
-            <h3>Modelagem delicada</h3>
-            <p>Peças atemporais, que servem para o dia a dia e para o culto.</p>
-          </div>
-          <div class="pillar">
-            <svg class="icon"><use href="#i-truck"/></svg>
-            <h3>Envio cuidadoso</h3>
-            <p>Embalagem protegida, postagem em até 2 dias úteis.</p>
-          </div>
-        </div>
-      </div>
-      <div class="essence__media reveal">
-        <img src="assets/loja.jpg" alt="Arara de madeira com roupas em tons neutros na loja" width="900" height="600" loading="lazy" />
-        <div class="essence__sign">
-          <p>Com carinho,</p>
-          <span>Equipe Delicatta</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Depoimentos -->
-    <section class="section section--sand" id="depoimentos">
-      <div class="section__head section__head--center">
-        <div>
-          <p class="eyebrow">Quem veste, conta</p>
-          <h2 class="section__title">Delicadeza que chega junto</h2>
-        </div>
-      </div>
-      <div class="quotes">
-        <figure class="quote">
-          <div class="quote__stars" aria-label="5 de 5 estrelas">★★★★★</div>
-          <blockquote>Recebi o vestido de linho e chorei. O tecido é leve, o caimento é perfeito e veio com um cartãozinho escrito à mão.</blockquote>
-          <figcaption>Ana Clara · São Paulo</figcaption>
-        </figure>
-        <figure class="quote">
-          <div class="quote__stars" aria-label="5 de 5 estrelas">★★★★★</div>
-          <blockquote>Comprei o suéter para usar no culto e virou o meu favorito. É quentinho sem ser pesado, e o tom combina com tudo.</blockquote>
-          <figcaption>Rebeca M. · Belo Horizonte</figcaption>
-        </figure>
-        <figure class="quote">
-          <div class="quote__stars" aria-label="5 de 5 estrelas">★★★★★</div>
-          <blockquote>Atendimento humano de verdade. Me ajudaram a escolher o tamanho pelo WhatsApp e a peça chegou em três dias.</blockquote>
-          <figcaption>Juliana P. · Curitiba</figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <!-- Dúvidas -->
-    <section class="section faq" id="duvidas">
-      <div class="faq__intro">
-        <p class="eyebrow">Dúvidas</p>
-        <h2 class="section__title">Antes de escolher</h2>
-        <p class="section__lead">Se ficar qualquer dúvida, é só chamar no WhatsApp — respondemos no mesmo dia.</p>
-        <a class="btn btn--ghost" href="https://wa.me/5586998174869" target="_blank" rel="noopener">
-          <svg class="icon"><use href="#i-whats"/></svg>
-          Falar com a Delicatta
-        </a>
-      </div>
-      <div class="faq__list">
-        <details>
-          <summary>Como faço o pedido?</summary>
-          <p>Monte sua sacola aqui no site e finalize no WhatsApp: a mensagem já vai com as peças escolhidas e o total. Confirmamos disponibilidade, tamanho e frete com você.</p>
-        </details>
-        <details>
-          <summary>Quais são as formas de pagamento?</summary>
-          <p>Pix (com 5% de desconto) e cartão de crédito em até 3x sem juros. O pagamento é combinado diretamente pelo WhatsApp, com comprovante.</p>
-        </details>
-        <details>
-          <summary>Qual é o prazo de envio?</summary>
-          <p>Postamos em até 2 dias úteis após a confirmação do pagamento. O prazo de entrega depende da sua região — enviamos pelo Correios ou transportadora, com código de rastreio.</p>
-        </details>
-        <details>
-          <summary>E se o tamanho não servir?</summary>
-          <p>Você tem 7 dias para solicitar a troca. A peça deve estar sem uso, com a etiqueta. Cuidamos dos detalhes da troca com você pelo WhatsApp.</p>
-        </details>
-        <details>
-          <summary>As peças são feitas à mão?</summary>
-          <p>Trabalhamos com pequena produção e peças de costura artesanal. Por isso, alguns modelos têm quantidade limitada e pequenas variações de tom — o que torna cada peça única.</p>
-        </details>
-      </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="cta">
-      <p class="eyebrow">Vamos escolher juntas?</p>
-      <h2>Uma peça nova,<br /><em>um cuidado a mais</em></h2>
-      <p class="cta__lead">Nos conte a ocasião e o seu tamanho. A gente monta uma seleção pensando em você.</p>
-      <div class="cta__actions">
-        <a class="btn btn--dark" href="https://wa.me/5586998174869" target="_blank" rel="noopener">
-          <svg class="icon"><use href="#i-whats"/></svg>
-          Chamar no WhatsApp
-        </a>
-        <a class="btn btn--ghost" href="https://instagram.com/delicattacrista" target="_blank" rel="noopener">
-          <svg class="icon"><use href="#i-insta"/></svg>
-          Ver no Instagram
-        </a>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="footer__top">
-      <div class="footer__brand">
-        <a class="brand" href="#topo">
-          <span class="brand__mark">D</span>
-          <span class="brand__text">
-            <span class="brand__name">Delicatta</span>
-            <span class="brand__sub">Cristã</span>
-          </span>
-        </a>
-        <p>Roupas delicadas, feitas em pequena produção, para vestir a fé em cada detalhe.</p>
-      </div>
-      <div class="footer__col">
-        <h3>Coleção</h3>
-        <a href="#colecao">Vestidos</a>
-        <a href="#colecao">Tricô</a>
-        <a href="#colecao">Blusas</a>
-        <a href="#colecao">Novidades</a>
-      </div>
-      <div class="footer__col">
-        <h3>Atendimento</h3>
-        <a href="#duvidas">Trocas e devoluções</a>
-        <a href="#duvidas">Guia de tamanhos</a>
-        <a href="#duvidas">Prazos de envio</a>
-        <a href="https://wa.me/5586998174869" target="_blank" rel="noopener">WhatsApp</a>
-      </div>
-      <div class="footer__col">
-        <h3>Redes</h3>
-        <a href="https://instagram.com/delicattacrista" target="_blank" rel="noopener">Instagram</a>
-        <a href="https://wa.me/5586998174869" target="_blank" rel="noopener">WhatsApp</a>
-        <a href="mailto:contato@delicatta.com.br">contato@delicatta.com.br</a>
+      <div class="camera-footer">
+        <button class="btn btn-primary" id="btn-start-camera">Ativar Câmera</button>
+        <button class="btn btn-danger" id="btn-stop-camera">Desligar</button>
       </div>
     </div>
-    <div class="footer__bottom">
-      <p>© <span id="year">2026</span> Delicatta Cristã · CNPJ 00.000.000/0001-00</p>
-      <p>Fotos ilustrativas · Pexels</p>
-    </div>
-  </footer>
+  </div>
 
-  <!-- Sacola -->
-  <div class="overlay" id="overlay" hidden></div>
-  <aside class="drawer" id="drawer" aria-label="Sacola de compras" aria-hidden="true">
-    <div class="drawer__head">
-      <h2>Sua sacola</h2>
-      <button class="icon-btn" id="drawerClose" type="button" aria-label="Fechar sacola">
-        <svg class="icon"><use href="#i-close"/></svg>
-      </button>
-    </div>
-    <div class="drawer__body" id="drawerBody"></div>
-    <div class="drawer__foot" id="drawerFoot" hidden>
-      <div class="drawer__row">
-        <span>Total</span>
-        <strong id="drawerTotal">R$ 0,00</strong>
-      </div>
-      <p class="drawer__note">Frete grátis acima de R$ 299 · Pix com 5% de desconto</p>
-      <a class="btn btn--dark btn--full" id="checkoutBtn" href="https://wa.me/5586998174869" target="_blank" rel="noopener">
-        <svg class="icon"><use href="#i-whats"/></svg>
-        Finalizar no WhatsApp
-      </a>
-      <button class="link-btn" id="clearBtn" type="button">Limpar sacola</button>
-    </div>
-  </aside>
-
-  <a class="float-wa" href="https://wa.me/5586998174869" target="_blank" rel="noopener" aria-label="Falar no WhatsApp">
-    <svg class="icon"><use href="#i-whats"/></svg>
-  </a>
-
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+  <!-- ===== SCRIPTS ===== -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
