@@ -3,18 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GeoVision 3D — Laboratório interativo de geometria espacial com visualização 3D, planificação e controle por gestos.">
   <title>GeoVision 3D — Laboratório de Geometria Espacial</title>
-  <!-- Three.js, Drei, MediaPipe -->
+
+  <!-- Favicon inline (silencia o 404) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5z'/%3E%3Cpath d='M2 17l10 5 10-5'/%3E%3Cpath d='M2 12l10 5 10-5'/%3E%3C/svg%3E">
+
+  <!-- Import map APENAS para Three.js (que É um módulo ES real) -->
   <script type="importmap">
     {
       "imports": {
         "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/",
-        "@mediapipe/hands": "https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js",
-        "@mediapipe/camera_utils": "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js"
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
       }
     }
   </script>
+
   <style>
     /* ===== RESET & GLOBAL ===== */
     * {
@@ -24,17 +28,19 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     }
 
+    html, body {
+      height: 100%;
+      width: 100%;
+    }
+
     body {
       background-color: #f5f7fa;
       color: #1e293b;
       overflow: hidden;
-      height: 100vh;
-      width: 100vw;
       display: flex;
       flex-direction: column;
     }
 
-    /* ===== CORES INSTITUCIONAIS ===== */
     :root {
       --azul-profundo: #0b2b4f;
       --azul-medio: #1e4b7a;
@@ -69,6 +75,7 @@
       font-size: 18px;
       color: var(--azul-profundo);
       letter-spacing: -0.3px;
+      user-select: none;
     }
 
     .logo svg {
@@ -83,6 +90,7 @@
       align-items: center;
     }
 
+    /* ===== BOTÕES ===== */
     .btn {
       border: none;
       background: transparent;
@@ -94,53 +102,40 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.15s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
       color: var(--azul-profundo);
       border: 1px solid transparent;
+      font-family: inherit;
     }
 
-    .btn:hover {
-      background: #f1f5f9;
-    }
+    .btn:hover { background: #f1f5f9; }
 
     .btn-primary {
       background: var(--azul-claro);
-      color: white;
+      color: #fff;
       border-color: var(--azul-claro);
     }
-
     .btn-primary:hover {
       background: var(--azul-medio);
       border-color: var(--azul-medio);
     }
 
-    .btn-outline {
-      border: 1px solid var(--cinza-borda);
-    }
+    .btn-outline { border: 1px solid var(--cinza-borda); }
+    .btn-outline:hover { background: #f8fafc; }
 
-    .btn-outline:hover {
-      background: #f8fafc;
-    }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
 
-    .btn-sm {
-      padding: 5px 10px;
-      font-size: 12px;
-    }
+    .btn-danger { color: #dc2626; border-color: #fecaca; }
+    .btn-danger:hover { background: #fef2f2; }
 
-    .btn-danger {
-      color: #dc2626;
-      border-color: #fecaca;
-    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn-danger:hover {
-      background: #fef2f2;
-    }
-
-    /* ===== LAYOUT PRINCIPAL ===== */
+    /* ===== LAYOUT ===== */
     .main {
       display: flex;
       flex: 1;
       overflow: hidden;
+      min-height: 0;
     }
 
     /* ===== SIDEBAR ESQUERDA ===== */
@@ -182,13 +177,12 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: all 0.1s;
+      transition: background 0.1s, color 0.1s;
       color: #334155;
+      user-select: none;
     }
 
-    .figure-item:hover {
-      background: #f1f5f9;
-    }
+    .figure-item:hover { background: #f1f5f9; }
 
     .figure-item.active {
       background: #eff6ff;
@@ -200,6 +194,7 @@
       width: 16px;
       height: 16px;
       opacity: 0.7;
+      flex-shrink: 0;
     }
 
     .figure-item.active svg {
@@ -207,18 +202,26 @@
       color: var(--azul-claro);
     }
 
-    /* ===== ÁREA CENTRAL 3D ===== */
+    /* ===== VIEWPORT 3D ===== */
     .viewport {
       flex: 1;
       position: relative;
       background: var(--cinza-fundo);
       overflow: hidden;
+      min-width: 0;
     }
 
     #canvas-container {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
+    }
+
+    #canvas-container canvas {
       display: block;
+      width: 100% !important;
+      height: 100% !important;
     }
 
     /* ===== SIDEBAR DIREITA ===== */
@@ -233,7 +236,7 @@
     }
 
     .panel-section {
-      padding: 16px 16px;
+      padding: 16px;
       border-bottom: 1px solid var(--cinza-borda);
     }
 
@@ -253,6 +256,7 @@
       color: var(--azul-claro);
     }
 
+    /* ===== DIMENSÕES ===== */
     .dimension-row {
       display: flex;
       align-items: center;
@@ -274,40 +278,43 @@
       color: var(--azul-profundo);
       text-align: right;
       background: #fafbfc;
+      font-family: inherit;
+      font-variant-numeric: tabular-nums;
     }
 
     .dimension-input:focus {
       outline: none;
       border-color: var(--azul-claro);
-      background: white;
+      background: #fff;
     }
 
+    /* ===== PROPRIEDADES ===== */
     .property-row {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
       padding: 6px 0;
       font-size: 13px;
+      gap: 10px;
     }
 
-    .property-label {
-      color: var(--cinza-texto);
-    }
+    .property-label { color: var(--cinza-texto); }
 
     .property-value {
       font-weight: 500;
       color: var(--azul-profundo);
       font-variant-numeric: tabular-nums;
+      text-align: right;
     }
 
     .property-formula {
       font-size: 11px;
       color: #94a3b8;
-      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
       margin-top: 2px;
     }
 
-    /* ===== CONTROLES DE PLANIFICAÇÃO ===== */
+    /* ===== PLANIFICAÇÃO ===== */
     .planify-controls {
       display: flex;
       flex-direction: column;
@@ -324,19 +331,32 @@
       flex: 1;
       height: 4px;
       -webkit-appearance: none;
+      appearance: none;
       background: var(--cinza-borda);
       border-radius: 2px;
       outline: none;
+      cursor: pointer;
     }
 
     .slider-row input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
+      appearance: none;
       width: 14px;
       height: 14px;
       border-radius: 50%;
       background: var(--azul-claro);
       cursor: pointer;
-      border: 2px solid white;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .slider-row input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--azul-claro);
+      cursor: pointer;
+      border: 2px solid #fff;
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
@@ -370,6 +390,7 @@
       display: flex;
       align-items: center;
       gap: 5px;
+      white-space: nowrap;
     }
 
     .status-dot {
@@ -377,36 +398,32 @@
       height: 6px;
       border-radius: 50%;
       background: #22c55e;
+      flex-shrink: 0;
     }
 
-    .status-dot.off {
-      background: #94a3b8;
-    }
+    .status-dot.off { background: #94a3b8; }
 
-    /* ===== MODAL DA CÂMERA ===== */
+    /* ===== MODAL CÂMERA ===== */
     .camera-modal {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      inset: 0;
       background: rgba(0,0,0,0.6);
       z-index: 100;
       align-items: center;
       justify-content: center;
+      padding: 20px;
     }
 
-    .camera-modal.active {
-      display: flex;
-    }
+    .camera-modal.active { display: flex; }
 
     .camera-container {
-      background: white;
+      background: #fff;
       border-radius: 10px;
-      width: 90%;
+      width: 100%;
       max-width: 720px;
-      overflow: hidden;
+      max-height: 100%;
+      overflow: auto;
       box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     }
 
@@ -433,7 +450,7 @@
 
     .camera-feed {
       width: 100%;
-      aspect-ratio: 4/3;
+      aspect-ratio: 4 / 3;
       background: #0f172a;
       border-radius: 8px;
       position: relative;
@@ -450,11 +467,11 @@
 
     .camera-feed canvas {
       position: absolute;
-      top: 0;
-      left: 0;
+      inset: 0;
       width: 100%;
       height: 100%;
       transform: scaleX(-1);
+      pointer-events: none;
     }
 
     .camera-status {
@@ -463,6 +480,7 @@
       gap: 8px;
       font-size: 13px;
       color: var(--cinza-texto);
+      min-height: 20px;
     }
 
     .camera-footer {
@@ -483,9 +501,7 @@
       line-height: 1.5;
     }
 
-    .gesture-info strong {
-      color: var(--azul-profundo);
-    }
+    .gesture-info strong { color: var(--azul-profundo); }
 
     /* ===== MODO APRESENTAÇÃO ===== */
     .presentation-mode .sidebar-left,
@@ -494,15 +510,13 @@
       display: none;
     }
 
-    .presentation-mode .viewport {
-      background: white;
-    }
+    .presentation-mode .viewport { background: #fff; }
 
     /* ===== LOADING ===== */
     .loading-overlay {
       position: absolute;
       inset: 0;
-      background: rgba(245,247,250,0.9);
+      background: rgba(245,247,250,0.95);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -510,6 +524,12 @@
       font-size: 13px;
       color: var(--cinza-texto);
       gap: 10px;
+      transition: opacity 0.3s ease;
+    }
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     .spinner {
@@ -519,29 +539,16 @@
       border-top-color: var(--azul-claro);
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
+      flex-shrink: 0;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ===== SCROLLBAR ===== */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
     /* ===== RESPONSIVO ===== */
     @media (max-width: 1024px) {
@@ -549,9 +556,9 @@
     }
 
     @media (max-width: 768px) {
-      .sidebar-left { display: none; }
-      .sidebar-right { display: none; }
+      .sidebar-left, .sidebar-right { display: none; }
       .header { padding: 0 12px; }
+      .header-actions .btn span { display: none; }
     }
   </style>
 </head>
@@ -559,54 +566,50 @@
   <!-- ===== HEADER ===== -->
   <header class="header">
     <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path d="M12 2L2 7l10 5 10-5-10-5z"/>
         <path d="M2 17l10 5 10-5"/>
         <path d="M2 12l10 5 10-5"/>
       </svg>
-      GeoVision 3D
+      <span>GeoVision 3D</span>
     </div>
     <div class="header-actions">
-      <button class="btn btn-outline" id="btn-camera">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="btn btn-outline" id="btn-camera" type="button" title="Controle por gestos">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
           <circle cx="12" cy="13" r="4"/>
         </svg>
-        Câmera
+        <span>Câmera</span>
       </button>
-      <button class="btn btn-outline" id="btn-presentation">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="btn btn-outline" id="btn-presentation" type="button" title="Modo apresentação">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <rect x="2" y="3" width="20" height="14" rx="2"/>
           <line x1="8" y1="21" x2="16" y2="21"/>
           <line x1="12" y1="17" x2="12" y2="21"/>
         </svg>
-        Apresentação
+        <span>Apresentação</span>
       </button>
-      <button class="btn btn-primary" id="btn-reset-view">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="btn btn-primary" id="btn-reset-view" type="button" title="Resetar câmera">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <polyline points="23 4 23 10 17 10"/>
           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
         </svg>
-        Resetar
+        <span>Resetar</span>
       </button>
     </div>
   </header>
 
   <!-- ===== MAIN ===== -->
   <div class="main">
-    <!-- SIDEBAR ESQUERDA -->
-    <aside class="sidebar-left">
+    <!-- SIDEBAR ESQUERDA: lista de figuras -->
+    <aside class="sidebar-left" aria-label="Biblioteca de sólidos">
       <div class="sidebar-section">
         <div class="sidebar-title">Poliedros</div>
-        <div class="figure-list" id="polyhedra-list">
-          <!-- preenchido via JS -->
-        </div>
+        <div class="figure-list" id="polyhedra-list"></div>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-title">Corpos Redondos</div>
-        <div class="figure-list" id="round-list">
-          <!-- preenchido via JS -->
-        </div>
+        <div class="figure-list" id="round-list"></div>
       </div>
     </aside>
 
@@ -615,46 +618,42 @@
       <div id="canvas-container"></div>
       <div class="loading-overlay" id="loading-overlay">
         <div class="spinner"></div>
-        Carregando geometria...
+        <span>Carregando geometria...</span>
       </div>
     </div>
 
-    <!-- SIDEBAR DIREITA -->
-    <aside class="sidebar-right">
+    <!-- SIDEBAR DIREITA: painéis -->
+    <aside class="sidebar-right" aria-label="Painel de propriedades">
       <!-- Propriedades -->
       <div class="panel-section">
         <div class="panel-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <circle cx="12" cy="12" r="10"/>
             <line x1="12" y1="16" x2="12" y2="12"/>
             <line x1="12" y1="8" x2="12.01" y2="8"/>
           </svg>
           Propriedades
         </div>
-        <div id="properties-container">
-          <!-- preenchido via JS -->
-        </div>
+        <div id="properties-container"></div>
       </div>
 
       <!-- Dimensões -->
       <div class="panel-section">
         <div class="panel-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M21 3H3v18h18V3z"/>
             <path d="M9 3v18"/>
             <path d="M3 9h18"/>
           </svg>
           Dimensões
         </div>
-        <div id="dimensions-container">
-          <!-- preenchido via JS -->
-        </div>
+        <div id="dimensions-container"></div>
       </div>
 
       <!-- Planificação -->
       <div class="panel-section">
         <div class="panel-title">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
           </svg>
@@ -663,16 +662,16 @@
         <div class="planify-controls">
           <div class="slider-row">
             <span style="font-size:12px;color:var(--cinza-texto);min-width:40px;">Abertura</span>
-            <input type="range" id="planify-slider" min="0" max="1" step="0.01" value="0">
+            <input type="range" id="planify-slider" min="0" max="1" step="0.01" value="0" aria-label="Progresso da planificação">
             <span id="planify-value" style="font-size:12px;color:var(--azul-profundo);min-width:32px;text-align:right;">0%</span>
           </div>
           <div class="btn-group">
-            <button class="btn btn-outline btn-sm" id="btn-planify">Planificar</button>
-            <button class="btn btn-outline btn-sm" id="btn-remount">Remontar</button>
+            <button class="btn btn-outline btn-sm" id="btn-planify" type="button">Planificar</button>
+            <button class="btn btn-outline btn-sm" id="btn-remount" type="button">Remontar</button>
           </div>
           <div class="slider-row">
             <span style="font-size:12px;color:var(--cinza-texto);min-width:40px;">Velocidade</span>
-            <input type="range" id="speed-slider" min="0.5" max="3" step="0.1" value="1.5">
+            <input type="range" id="speed-slider" min="0.5" max="3" step="0.1" value="1.5" aria-label="Velocidade da animação">
             <span id="speed-value" style="font-size:12px;color:var(--azul-profundo);min-width:32px;text-align:right;">1.5x</span>
           </div>
         </div>
@@ -684,31 +683,31 @@
   <div class="status-bar">
     <div class="status-item">
       <span class="status-dot" id="status-webgl"></span>
-      WebGL ativo
+      <span>WebGL ativo</span>
     </div>
     <div class="status-item">
       <span class="status-dot off" id="status-camera"></span>
-      Câmera desligada
+      <span>Câmera desligada</span>
     </div>
     <div class="status-item" id="status-fps">— FPS</div>
     <div class="status-item" style="margin-left:auto;" id="status-figure">Cubo</div>
   </div>
 
   <!-- ===== MODAL CÂMERA ===== -->
-  <div class="camera-modal" id="camera-modal">
+  <div class="camera-modal" id="camera-modal" role="dialog" aria-modal="true" aria-label="Controle por gestos">
     <div class="camera-container">
       <div class="camera-header">
         <h3>Controle por Gestos</h3>
-        <button class="btn btn-outline btn-sm" id="btn-close-camera">Fechar</button>
+        <button class="btn btn-outline btn-sm" id="btn-close-camera" type="button">Fechar</button>
       </div>
       <div class="camera-body">
         <div class="camera-feed" id="camera-feed">
-          <video id="webcam" autoplay playsinline></video>
+          <video id="webcam" autoplay playsinline muted></video>
           <canvas id="gesture-canvas"></canvas>
         </div>
         <div class="camera-status" id="camera-status">
           <span class="status-dot off"></span>
-          Aguardando permissão da câmera...
+          <span>Aguardando permissão da câmera...</span>
         </div>
         <div class="gesture-info">
           <strong>Rotacionar:</strong> mova a mão para a esquerda/direita.<br>
@@ -717,13 +716,20 @@
         </div>
       </div>
       <div class="camera-footer">
-        <button class="btn btn-primary" id="btn-start-camera">Ativar Câmera</button>
-        <button class="btn btn-danger" id="btn-stop-camera">Desligar</button>
+        <button class="btn btn-primary" id="btn-start-camera" type="button">Ativar Câmera</button>
+        <button class="btn btn-danger" id="btn-stop-camera" type="button">Desligar</button>
       </div>
     </div>
   </div>
 
-  <!-- ===== SCRIPTS ===== -->
+  <!--
+    MediaPipe é UMD/global — DEVE ser carregado como <script> normal
+    e ANTES do script.js (que os usa via window.Hands e window.Camera).
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1640029074/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
+
+  <!-- Script principal (módulo ES, usa import map do Three.js) -->
   <script type="module" src="script.js"></script>
 </body>
 </html>
